@@ -75,7 +75,8 @@
   "safariWarning": "Safari ブラウザはまだサポートされていません",
   "view": {
     "switchToLite": "簡易表示に切り替え",
-    "switchToFull": "詳細表示に切り替え"
+    "switchToFull": "詳細表示に切り替え",
+    "safariWarning": "まだサポートされていません"
   },
   "maintenance": {
     "default": "メンテナンス中",

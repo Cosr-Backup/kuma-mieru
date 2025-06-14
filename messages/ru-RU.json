@@ -75,7 +75,8 @@
   "safariWarning": "Safari не поддерживается",
   "view": {
     "switchToLite": "Упрощенный вид",
-    "switchToFull": "Полный вид"
+    "switchToFull": "Полный вид",
+    "safariWarning": "Еще не поддерживается"
   },
   "maintenance": {
     "default": "Плановое обслуживание",

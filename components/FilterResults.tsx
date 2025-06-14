@@ -6,7 +6,7 @@ import {
   Button,
   Checkbox,
   Chip,
-  Dropdown,
+  Dropdown as HeroUIDropdown,
   DropdownItem,
   DropdownMenu,
   DropdownTrigger,
@@ -38,7 +38,7 @@ export default function FilterResults({ matchedMonitorsCount }: FilterResultsPro
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearchInGroup(e.target.checked);
     },
-    [setSearchInGroup],
+    [setSearchInGroup]
   );
 
   if (!isFiltering) return null;
@@ -96,7 +96,7 @@ export default function FilterResults({ matchedMonitorsCount }: FilterResultsPro
           </div>
           <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
             {/* 状态筛选器下拉菜单 */}
-            <Dropdown>
+            <HeroUIDropdown>
               <DropdownTrigger>
                 <Button
                   variant="flat"
@@ -151,7 +151,7 @@ export default function FilterResults({ matchedMonitorsCount }: FilterResultsPro
                   {t('node.statusFilter.maintenance')}
                 </DropdownItem>
               </DropdownMenu>
-            </Dropdown>
+            </HeroUIDropdown>
 
             {/* 在分组中搜索选项 */}
             <div className="flex items-center gap-1">

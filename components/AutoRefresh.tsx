@@ -104,7 +104,7 @@ export default function AutoRefresh({ onRefresh, interval = 60000, children }: A
     } catch (error) {
       console.error(t('error.refresh'), ':', error);
       toast.error(
-        `${t('error.refresh')}: ${error instanceof Error ? error.message : t('error.unknown')}`,
+        `${t('error.refresh')}: ${error instanceof Error ? error.message : t('error.unknown')}`
       );
     } finally {
       setIsRefreshing(false);
@@ -128,7 +128,7 @@ export default function AutoRefresh({ onRefresh, interval = 60000, children }: A
     if (isPaused) return;
 
     const timer = setInterval(() => {
-      setTimeLeft((prev) => {
+      setTimeLeft(prev => {
         if (prev <= 1000) {
           handleRefresh();
           return interval;
@@ -148,7 +148,7 @@ export default function AutoRefresh({ onRefresh, interval = 60000, children }: A
         className={cn(
           'sticky top-0 left-0 right-0',
           'bg-background rounded-b-large',
-          'p-4 space-y-2 z-40',
+          'p-4 space-y-2 z-40'
         )}
       >
         <div className="flex items-center gap-4 max-w-7xl mx-auto">

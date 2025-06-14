@@ -1,8 +1,8 @@
 import type { Heartbeat } from '@/types/monitor';
-import { Tooltip } from '@heroui/react';
+import { Tooltip as HeroUITooltip } from '@heroui/react';
 import { clsx } from 'clsx';
 import { useTranslations } from 'next-intl';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { calculatePingMetrics } from '../utils/charts';
 import { getPingColorClass } from '../utils/colors';
 import { formatLatency } from '../utils/format';
@@ -38,9 +38,9 @@ const SinglePingStat = ({ label, value, isHome, t }: SinglePingStatProps) => {
   return (
     <div className="flex items-center gap-0.5">
       {isHome ? (
-        <Tooltip content={t(label.full)}>
+        <HeroUITooltip content={t(label.full)}>
           <span>{label.short}</span>
-        </Tooltip>
+        </HeroUITooltip>
       ) : (
         t(label.full)
       )}

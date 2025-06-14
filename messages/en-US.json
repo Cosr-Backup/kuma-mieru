@@ -75,7 +75,8 @@
   "safariWarning": "Safari browser is not supported yet",
   "view": {
     "switchToLite": "Switch to Lite View",
-    "switchToFull": "Switch to Full View"
+    "switchToFull": "Switch to Full View",
+    "safariWarning": "Not supported yet"
   },
   "maintenance": {
     "default": "Under Scheduled Maintenance",

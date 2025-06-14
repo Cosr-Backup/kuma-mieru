@@ -2,7 +2,6 @@
 
 import type { SiteConfig } from '@/types/config';
 import { Link } from '@heroui/react';
-import React from 'react';
 
 import packageJson from '@/package.json';
 

@@ -75,7 +75,8 @@
   "safariWarning": "Safari 브라우저 미지원",
   "view": {
     "switchToLite": "라이트 뷰로 전환",
-    "switchToFull": "전체 뷰로 전환"
+    "switchToFull": "전체 뷰로 전환",
+    "safariWarning": "아직 지원되지 않습니다"
   },
   "maintenance": {
     "default": "예정된 유지보수",

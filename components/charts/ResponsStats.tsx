@@ -1,4 +1,4 @@
-import { Tooltip } from '@heroui/react';
+import { Tooltip as HeroUITooltip } from '@heroui/react';
 import { clsx } from 'clsx';
 import { useTranslations } from 'next-intl';
 import { PolarAngleAxis, RadialBar, RadialBarChart, ResponsiveContainer } from 'recharts';
@@ -28,7 +28,7 @@ export function ResponsStats({ value, fill, isHome, size = 'md' }: ResponsStatsP
   const textSize = size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-base' : 'text-sm';
 
   return (
-    <Tooltip
+    <HeroUITooltip
       content={tooltipContent}
       placement="left"
       delay={0}
@@ -72,6 +72,6 @@ export function ResponsStats({ value, fill, isHome, size = 'md' }: ResponsStatsP
         </div>
         <span className={`${textSize} text-gray-500`}>{value.toFixed(2)}%</span>
       </div>
-    </Tooltip>
+    </HeroUITooltip>
   );
 }

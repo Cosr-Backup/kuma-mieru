@@ -56,7 +56,7 @@ export default function Home() {
 
   // Filter active maintenance plans
   const activeMaintenances = maintenanceList.filter(
-    (m) => m.active && (m.status === 'under-maintenance' || m.status === 'scheduled'),
+    m => m.active && (m.status === 'under-maintenance' || m.status === 'scheduled')
   );
 
   useEffect(() => {
@@ -70,7 +70,7 @@ export default function Home() {
   };
 
   const toggleGlobalView = () => {
-    setIsGlobalLiteView((prev) => !prev);
+    setIsGlobalLiteView(prev => !prev);
   };
 
   const filteredMonitorGroups = useMemo(() => {
@@ -84,7 +84,7 @@ export default function Home() {
       filterMonitorByStatus(monitor, filterStatus, monitoringData.heartbeatList);
 
     return monitorGroups
-      .map((group) => {
+      .map(group => {
         const groupNameMatches =
           searchInGroup && hasSearchTerm && group.name.toLowerCase().includes(searchTermLower);
 
@@ -97,7 +97,7 @@ export default function Home() {
           };
         }
 
-        const filteredMonitors = group.monitorList.filter((monitor) => {
+        const filteredMonitors = group.monitorList.filter(monitor => {
           if (!statusFilter(monitor)) return false;
 
           if (!hasSearchTerm) return true;
@@ -106,9 +106,9 @@ export default function Home() {
             monitor.name.toLowerCase().includes(searchTermLower) ||
             monitor.url?.toLowerCase().includes(searchTermLower) ||
             monitor.tags?.some(
-              (tag) =>
+              tag =>
                 tag.name.toLowerCase().includes(searchTermLower) ||
-                tag.value?.toLowerCase().includes(searchTermLower),
+                tag.value?.toLowerCase().includes(searchTermLower)
             )
           );
         });
@@ -164,7 +164,7 @@ export default function Home() {
           </div>
 
           {/* 维护计划显示 */}
-          {activeMaintenances.map((maintenance) => (
+          {activeMaintenances.map(maintenance => (
             <MaintenanceAlert key={maintenance.id} maintenance={maintenance} />
           ))}
 
