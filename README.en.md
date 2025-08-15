@@ -20,7 +20,7 @@ Built with Next.js 15, TypeScript, and Recharts, this project enhances Uptime Ku
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/) [![React](https://img.shields.io/badge/React-v19-387CA0?style=flat-square&logo=react&logoColor=white)](https://reactjs.org/) [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org/)
 
-[![Bun](https://img.shields.io/badge/Bun-Package%20Manager-14151A?style=flat-square&logo=bun&logoColor=white)](https://bun.sh/) [![Recharts](https://img.shields.io/badge/Recharts-Charting%20Library-8884d8?style=flat-square&logo=recharts&logoColor=white)](https://recharts.org/en-US/) [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v3-4EB9FA?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Bun](https://img.shields.io/badge/Bun-Package%20Manager-14151A?style=flat-square&logo=bun&logoColor=white)](https://bun.sh/) [![Recharts](https://img.shields.io/badge/Recharts-Charting%20Library-8884d8?style=flat-square&logo=recharts&logoColor=white)](https://recharts.org/en-US/) [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4-4EB9FA?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
 <!-- Project Data -->
 

@@ -55,14 +55,14 @@ export const Navbar = () => {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setInputValue(e.target.value);
     },
-    [setInputValue]
+    [setInputValue],
   );
 
   const handleCompositionEnd = useCallback(
     (e: React.CompositionEvent<HTMLInputElement>) => {
       setInputValue((e.target as HTMLInputElement).value);
     },
-    [setInputValue]
+    [setInputValue],
   );
 
   const handleClearSearch = useCallback(() => {
@@ -94,7 +94,7 @@ export const Navbar = () => {
         labelPlacement="outside"
         placeholder={t('node.search')}
         startContent={
-          <SearchIcon className="text-base text-default-400 pointer-events-none flex-shrink-0" />
+          <SearchIcon className="text-base text-default-400 pointer-events-none shrink-0" />
         }
         type="search"
       />
@@ -139,12 +139,12 @@ export const Navbar = () => {
         </NavbarBrand>
         <nav aria-label={t('navbar.main')}>
           <ul className="hidden lg:flex gap-4 justify-start ml-2">
-            {siteConfig.navItems.map(item => (
+            {siteConfig.navItems.map((item) => (
               <li key={item.href}>
                 <NextLink
                   className={clsx(
                     linkStyles({ color: 'foreground' }),
-                    'data-[active=true]:text-primary data-[active=true]:font-medium'
+                    'data-[active=true]:text-primary data-[active=true]:font-medium',
                   )}
                   color="foreground"
                   href={item.href}
@@ -187,7 +187,7 @@ export const Navbar = () => {
             </li>
             <li>
               <NavbarMenuToggle
-                icon={isOpen => (
+                icon={(isOpen) => (
                   <motion.div
                     variants={{
                       closed: { rotate: 0, opacity: 1 },
@@ -206,7 +206,7 @@ export const Navbar = () => {
         </nav>
       </NavbarContent>
 
-      <NavbarMenu className="z-[60]">
+      <NavbarMenu className="z-60">
         {apiConfig.isShowStarButton && starButton}
         <div className="flex flex-col gap-4">{searchInput}</div>
         <nav aria-label={t('navbar.mobileNav')}>

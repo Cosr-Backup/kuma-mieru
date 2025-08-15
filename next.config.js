@@ -22,7 +22,7 @@ const baseConfig = {
   reactStrictMode: true,
 
   images: {
-    remotePatterns: getImageDomains().map(hostname => ({
+    remotePatterns: getImageDomains().map((hostname) => ({
       protocol: 'https',
       hostname,
     })),

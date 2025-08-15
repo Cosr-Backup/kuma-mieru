@@ -4,10 +4,10 @@ import { type Locale, locales } from '@/utils/i18n/config';
 import { setUserLocale } from '@/utils/i18n/locale';
 import {
   Button,
-  Dropdown as HeroUIDropdown,
   DropdownItem,
   DropdownMenu,
   DropdownTrigger,
+  Dropdown as HeroUIDropdown,
 } from '@heroui/react';
 import { Languages, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -36,7 +36,7 @@ export const I18NSwitch = () => {
       } catch (error) {
         console.error('Failed to change locale:', error);
         toast.error(
-          `${t('locale.changeError')}: ${error instanceof Error ? error.message : t('error.unknown')}`
+          `${t('locale.changeError')}: ${error instanceof Error ? error.message : t('error.unknown')}`,
         );
       }
     });
@@ -54,7 +54,7 @@ export const I18NSwitch = () => {
         </Button>
       </DropdownTrigger>
       <DropdownMenu aria-label="Switch Language" variant="faded">
-        {locales.map(item => (
+        {locales.map((item) => (
           <DropdownItem
             key={item.key}
             onPress={() => handleLocaleChange(item.key, item.name)}

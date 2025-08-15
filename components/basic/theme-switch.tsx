@@ -2,10 +2,10 @@
 
 import {
   Button,
-  Dropdown as HeroUIDropdown,
   DropdownItem,
   DropdownMenu,
   DropdownTrigger,
+  Dropdown as HeroUIDropdown,
 } from '@heroui/react';
 import { motion } from 'framer-motion';
 import { Monitor, Moon, Sun } from 'lucide-react';

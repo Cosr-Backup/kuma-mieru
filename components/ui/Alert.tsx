@@ -74,16 +74,16 @@ export const Alert = ({
             <div
               className={clsx(
                 'grid transition-all duration-200 ease-in-out w-full',
-                isExpanded ? 'grid-rows-[1fr] opacity-100 mt-0' : 'grid-rows-[0fr] opacity-0'
+                isExpanded ? 'grid-rows-[1fr] opacity-100 mt-0' : 'grid-rows-[0fr] opacity-0',
               )}
             >
               <div className="overflow-hidden">{children}</div>
             </div>
           </div>
           {isExpanded ? (
-            <ChevronUp className="h-4 w-4 flex-shrink-0 text-gray-500" />
+            <ChevronUp className="h-4 w-4 shrink-0 text-gray-500" />
           ) : (
-            <ChevronDown className="h-4 w-4 flex-shrink-0 text-gray-500" />
+            <ChevronDown className="h-4 w-4 shrink-0 text-gray-500" />
           )}
         </div>
       </HeroUIAlert>

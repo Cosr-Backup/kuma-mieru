@@ -57,12 +57,12 @@ export function MonitorCardLite({
         <CardBody className="py-2 px-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <StatusIcon className={`text-${chartColor} h-5 w-5 flex-shrink-0`} />
-              <h3 className="font-semibold truncate overflow-ellipsis">{monitor.name}</h3>
+              <StatusIcon className={`text-${chartColor} h-5 w-5 shrink-0`} />
+              <h3 className="font-semibold truncate text-ellipsis">{monitor.name}</h3>
 
               {monitor.tags && monitor.tags.length > 0 && (
                 <div className="flex-wrap gap-1 ml-2 hidden sm:flex">
-                  {monitor.tags.slice(0, 2).map(tag => (
+                  {monitor.tags.slice(0, 2).map((tag) => (
                     <Chip
                       key={tag.id}
                       size="sm"
@@ -86,7 +86,7 @@ export function MonitorCardLite({
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <ResponsStats
                   value={uptimeData[0].value}
                   fill={uptimeData[0].fill}

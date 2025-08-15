@@ -110,14 +110,14 @@ export function SystemStatusAlert() {
 
   return (
     <div
-      className={`relative overflow-hidden w-full py-3 md:py-4 px-4 md:px-6 bg-gradient-to-r ${getBackgroundStyle()} shadow-lg rounded-2xl mx-auto my-4`}
+      className={`relative overflow-hidden w-full py-3 md:py-4 px-4 md:px-6 bg-linear-to-r ${getBackgroundStyle()} shadow-lg rounded-2xl mx-auto my-4`}
     >
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute right-0 top-0 rounded-full w-64 h-64 -mt-32 -mr-32 bg-white/5" />
         <div className="absolute left-0 bottom-0 rounded-full w-48 h-48 -mb-24 -ml-24 bg-black/5" />
       </div>
 
-      <div className="max-w-screen-xl mx-auto">
+      <div className="max-w-(--breakpoint-xl) mx-auto">
         <div className="flex flex-col items-center md:items-start">
           <div className={cn('flex items-center relative z-10', animate ? 'animate-pulse' : '')}>
             <div className="relative">

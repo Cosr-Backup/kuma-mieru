@@ -6,10 +6,10 @@ import {
   Button,
   Checkbox,
   Chip,
-  Dropdown as HeroUIDropdown,
   DropdownItem,
   DropdownMenu,
   DropdownTrigger,
+  Dropdown as HeroUIDropdown,
   Tooltip,
 } from '@heroui/react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -38,7 +38,7 @@ export default function FilterResults({ matchedMonitorsCount }: FilterResultsPro
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearchInGroup(e.target.checked);
     },
-    [setSearchInGroup]
+    [setSearchInGroup],
   );
 
   if (!isFiltering) return null;

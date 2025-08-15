@@ -20,4 +20,4 @@ const config = {
   plugins: [heroui(), require('@tailwindcss/typography')],
 };
 
-module.exports = config;
+export default config;

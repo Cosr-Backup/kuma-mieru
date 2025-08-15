@@ -1,6 +1,6 @@
 'use client';
 
-import { Card as HeroUICard, CardBody, CardHeader } from '@heroui/react';
+import { CardBody, CardHeader, Card as HeroUICard } from '@heroui/react';
 import { Navbar as HeroUINavbar, NavbarBrand, NavbarContent, NavbarItem } from '@heroui/react';
 import { Skeleton as HeroUISkeleton } from '@heroui/react';
 
@@ -65,7 +65,7 @@ export const MonitorCardSkeleton = () => {
           <div className="flex gap-1">
             <HeroUISkeleton className="h-8 w-full rounded-sm" />
           </div>
-          <HeroUISkeleton className="h-[1px] w-full" />
+          <HeroUISkeleton className="h-px w-full" />
           {/* Charts */}
           <HeroUISkeleton className="h-[120px] w-full rounded-lg" />
         </div>
