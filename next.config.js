@@ -1,12 +1,13 @@
 /** @type {import('next').NextConfig} */
-const fs = require('node:fs');
-const path = require('node:path');
-const createNextIntlPlugin = require('next-intl/plugin');
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import createNextIntlPlugin from 'next-intl/plugin';
+import bundleAnalyzer from '@next/bundle-analyzer';
 
 const getImageDomains = () => {
   try {
-    const configPath = path.join(process.cwd(), 'config', 'generated', 'image-domains.json');
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    const configPath = join(process.cwd(), 'config', 'generated', 'image-domains.json');
+    const config = JSON.parse(readFileSync(configPath, 'utf8'));
     return config.domains;
   } catch (e) {
     return ['*'];
@@ -33,7 +34,7 @@ const baseConfig = {
   webpack: (config, { isServer, dev }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@': path.join(__dirname),
+      '@': join(__dirname),
     };
 
     if (!isServer && !dev) {
@@ -116,22 +117,22 @@ const developmentConfig = {
 };
 
 const withNextIntl = createNextIntlPlugin('./utils/i18n/request.ts');
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
+const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
   openAnalyzer: true,
 });
 
+let config = isDevelopment ? developmentConfig : productionConfig;
+
 // Cloudflare Deployment
 if (process.env.CF_DEPLOYMENT) {
-  plugins.push([
-    () => ({
-      experimental: {
-        runtime: 'edge',
-      },
-    }),
-  ]);
+  config = {
+    ...config,
+    experimental: {
+      ...(config.experimental ?? {}),
+      runtime: 'edge',
+    },
+  };
 }
 
-const config = isDevelopment ? developmentConfig : productionConfig;
-
-module.exports = withNextIntl(withBundleAnalyzer(config));
+export default withNextIntl(withBundleAnalyzer(config));
