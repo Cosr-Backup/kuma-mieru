@@ -4,10 +4,12 @@ export const customFetchOptions = {
   headers: {
     'User-Agent': `Kuma-Mieru/${packageJson.version} (https://github.com/Alice39s/kuma-mieru)`,
     Accept: 'text/html,application/json,*/*',
+    'Accept-Encoding': '', // bypass encoding
+    Connection: 'keep-alive',
   },
   maxRetries: 3,
-  retryDelay: 1000,
-  timeout: 10000,
+  retryDelay: 500,
+  timeout: 8000,
 };
 
 /**

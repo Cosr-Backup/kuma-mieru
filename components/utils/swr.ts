@@ -32,10 +32,12 @@ export const SWR_KEYS = {
  * 默认配置
  */
 const DEFAULT_SWR_CONFIG: SWRConfiguration = {
-  revalidateOnFocus: true,
+  revalidateOnFocus: false, // 保留这个优化
   revalidateOnReconnect: true,
-  dedupingInterval: 5000, // 防抖措施，五秒内重复请求强制缓存
-  errorRetryCount: 3, // 错误重试次数
+  dedupingInterval: 3000, // 稍微增加防抖时间
+  errorRetryCount: 3, // 恢复重试次数以提高可靠性
+  errorRetryInterval: 1000,
+  loadingTimeout: 5000, // 增加加载超时
 };
 
 /**

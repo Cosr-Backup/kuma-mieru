@@ -1,7 +1,7 @@
 {
   "name": "kuma-mieru",
   "description": "A 3rd-party Uptime Kuma monitoring dashboard built on Next.js 15, TypeScript and Recharts.",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "author": "Alice39s",
   "license": "MPL-2.0",
   "homepage": "https://github.com/Alice39s/kuma-mieru",
@@ -82,5 +82,11 @@
     "typescript": "^5.9.2",
     "wrangler": "^4.31.0"
   },
-  "trustedDependencies": ["@biomejs/biome", "@heroui/shared-utils", "esbuild", "sharp", "workerd"]
+  "trustedDependencies": [
+    "@biomejs/biome",
+    "@heroui/shared-utils",
+    "esbuild",
+    "sharp",
+    "workerd"
+  ]
 }

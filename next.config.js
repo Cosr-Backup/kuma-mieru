@@ -1,8 +1,12 @@
 /** @type {import('next').NextConfig} */
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import createNextIntlPlugin from 'next-intl/plugin';
 import bundleAnalyzer from '@next/bundle-analyzer';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const getImageDomains = () => {
   try {
@@ -67,6 +71,10 @@ const productionConfig = {
   ...baseConfig,
   output: 'standalone',
 
+  experimental: {
+    optimizePackageImports: ['lucide-react', '@heroui/react'],
+  },
+
   compiler: {
     removeConsole: {
       exclude: ['error', 'warn'],
@@ -93,6 +101,10 @@ const productionConfig = {
             key: 'X-XSS-Protection',
             value: '1; mode=block',
           },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=300, stale-while-revalidate=60',
+          },
         ],
       },
       {
@@ -101,6 +113,15 @@ const productionConfig = {
           {
             key: 'Cache-Control',
             value: 'public, max-age=60, stale-while-revalidate=300',
+          },
+        ],
+      },
+      {
+        source: '/_next/static/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
           },
         ],
       },

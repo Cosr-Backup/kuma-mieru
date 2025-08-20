@@ -159,10 +159,31 @@ export async function getPreloadData() {
 
     const html = await htmlResponse.text();
     const $ = cheerio.load(html);
-    const preloadScript = $('#preload-data').text();
+    
+    // Uptime Kuma version > 1.18.4, use script#preload-data to get preload data
+    // @see https://github.com/louislam/uptime-kuma/commit/6e07ed20816969bfd1c6c06eb518171938312782
+    // & https://github.com/louislam/uptime-kuma/issues/2186#issuecomment-1270471470
+    let preloadScript = $('#preload-data').text();
 
-    if (!preloadScript) {
-      throw new ConfigError('Preload script tag not found');
+    if (!preloadScript || preloadScript.trim() === '') {
+      // Uptime Kuma version <= 1.18.4, use script:contains("window.preloadData") to get preload data
+      const scriptWithPreloadData = $('script:contains("window.preloadData")').text();
+      
+      if (scriptWithPreloadData) {
+        const match = scriptWithPreloadData.match(/window\.preloadData\s*=\s*({.*});/);
+        if (match && match[1]) {
+          preloadScript = match[1];
+          console.log('Successfully extracted preload data from window.preloadData');
+        } else {
+          console.error('Failed to extract preload data with regex. Script content:', scriptWithPreloadData.slice(0, 200));
+        }
+      }
+    }
+
+    if (!preloadScript || preloadScript.trim() === '') {
+      console.error('HTML response preview:', html.slice(0, 500));
+      console.error('Available script tags:', $('script').map((i, el) => $(el).attr('id') || 'no-id').get());
+      throw new ConfigError('Preload script tag not found or empty');
     }
 
     try {
