@@ -1,8 +1,11 @@
 'use client';
 
-import { Button, Input, Kbd, Link } from '@heroui/react';
 import {
+  Button,
   Navbar as HeroUINavbar,
+  Input,
+  Kbd,
+  Link,
   NavbarBrand,
   NavbarContent,
   NavbarMenu,
@@ -118,7 +121,7 @@ export const Navbar = () => {
     if (apiConfig.siteMeta.icon) {
       return isExternalUrl(apiConfig.siteMeta.icon)
         ? apiConfig.siteMeta.icon
-        : new URL(apiConfig.siteMeta.icon, apiConfig.baseUrl).toString();
+        : apiConfig.siteMeta.icon; // For relative paths, let Next.js <Image /> component handle it
     }
     return '';
   };
