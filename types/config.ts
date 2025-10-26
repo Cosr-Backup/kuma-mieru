@@ -1,7 +1,10 @@
-import type { GeneratedConfig } from '@/config/types';
+import type { GeneratedConfig, GeneratedPageConfig } from '@/config/types';
 import type { Incident, MonitorGroup } from './monitor';
 
-export interface Config extends GeneratedConfig {
+export interface Config extends Omit<GeneratedConfig, 'pageId' | 'siteMeta'> {
+  defaultPageId: string;
+  pageId: string;
+  siteMeta: GeneratedPageConfig['siteMeta'];
   htmlEndpoint: string;
   apiEndpoint: string;
 }

@@ -15,6 +15,8 @@ interface StatusBlockIndicatorProps {
 }
 
 const VIEW_PREFERENCE_KEY = 'view-preference';
+const BLOCK_BASE_CLASS =
+  'flex-1 h-full cursor-pointer transition-all hover:opacity-80 dark:hover:opacity-90';
 
 export function StatusBlockIndicator({
   heartbeats,
@@ -34,10 +36,39 @@ export function StatusBlockIndicator({
 
   const t = useTranslations();
   // 获取最近的 50 个心跳数据点
-  const recentHeartbeats = heartbeats.slice(-50);
+  const recentHeartbeats = useMemo(() => heartbeats.slice(-50), [heartbeats]);
 
   // 计算延迟动态分布
   const pingStats = useMemo(() => calculatePingStats(recentHeartbeats), [recentHeartbeats]);
+
+  const heartbeatBlocks = useMemo(() => {
+    if (heartbeats.length === 0) return [];
+
+    return heartbeats.map((hb) => {
+      const colorInfo = getStatusColor(hb, pingStats);
+      const tooltipContent = (
+        <div key={hb.time} className="flex w-full items-center gap-x-2">
+          <div className="flex w-full flex-col gap-y-1">
+            <div className="flex w-full items-center gap-x-1 text-small">
+              <span className={clsx('text-small font-medium', colorInfo.text)}>
+                {t(colorInfo.label)}
+              </span>
+              <span className="text-foreground/60 dark:text-foreground/40">-</span>
+              <span className="text-foreground/60 dark:text-foreground/40">
+                {dayjs(hb.time).format('YYYY-MM-DD HH:mm:ss')}
+              </span>
+            </div>
+          </div>
+        </div>
+      );
+
+      return {
+        key: hb.time,
+        blockClassName: clsx(BLOCK_BASE_CLASS, hb.ping ? colorInfo.bg.dark : colorInfo.bg.light),
+        tooltipContent,
+      };
+    });
+  }, [heartbeats, pingStats, t]);
 
   return (
     <div className={clsx(className, 'relative mt-4 flex flex-col gap-1')}>
@@ -63,37 +94,11 @@ export function StatusBlockIndicator({
 
       {/* 状态块 */}
       <div className="flex gap-0.5 mt-2 h-3 w-[98%] justify-center items-center mx-auto rounded-sm overflow-hidden">
-        {heartbeats.map((hb) => {
-          const colorInfo = getStatusColor(hb, pingStats);
-          return (
-            <CustomTooltip
-              key={hb.time}
-              content={
-                <div className="flex w-full items-center gap-x-2">
-                  <div className="flex w-full flex-col gap-y-1">
-                    <div className="flex w-full items-center gap-x-1 text-small">
-                      <span className={clsx('text-small font-medium', colorInfo.text)}>
-                        {t(colorInfo.label)}
-                      </span>
-                      <span className="text-foreground/60 dark:text-foreground/40">-</span>
-                      <span className="text-foreground/60 dark:text-foreground/40">
-                        {dayjs(hb.time).format('YYYY-MM-DD HH:mm:ss')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              }
-            >
-              <div
-                className={clsx(
-                  'flex-1 h-full cursor-pointer transition-all hover:opacity-80',
-                  'dark:hover:opacity-90',
-                  hb.ping ? colorInfo.bg.dark : colorInfo.bg.light,
-                )}
-              />
-            </CustomTooltip>
-          );
-        })}
+        {heartbeatBlocks.map(({ key, tooltipContent, blockClassName }) => (
+          <CustomTooltip key={key} content={tooltipContent}>
+            <div className={blockClassName} />
+          </CustomTooltip>
+        ))}
       </div>
     </div>
   );

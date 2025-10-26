@@ -86,7 +86,11 @@ const configGroups: ConfigGroup[] = [
       },
       {
         name: 'PAGE_ID',
-        value: generatedConfig?.pageId || process.env.PAGE_ID,
+        value: generatedConfig?.pageId || generatedConfig?.pageIds?.[0] || process.env.PAGE_ID,
+      },
+      {
+        name: 'PAGE_IDS',
+        value: generatedConfig?.pageIds?.join(', ') || process.env.PAGE_ID,
       },
     ],
   },

@@ -1,130 +1,31 @@
-'use client';
+import { PageConfigProvider } from '@/components/context/PageConfigContext';
+import { AppShell } from '@/components/layout/AppShell';
+import { MonitorDetailContent } from '@/components/monitor/MonitorDetailContent';
+import { getConfig } from '@/config/api';
+import { getGlobalConfig } from '@/services/config.server';
+import { notFound } from 'next/navigation';
 
-import AutoRefresh from '@/components/AutoRefresh';
-import { MonitorCard } from '@/components/MonitorCard';
-import { MonitorCardSkeleton } from '@/components/ui/CommonSkeleton';
-import { revalidateData, useMonitor } from '@/components/utils/swr';
-import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
-import { use } from 'react';
+export default async function MonitorDetailPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: { pageId?: string };
+}) {
+  const requestedPageId = searchParams.pageId;
+  const pageConfig = requestedPageId ? getConfig(requestedPageId) : getConfig();
 
-const pageVariants = {
-  initial: {
-    opacity: 0,
-    y: 20,
-  },
-  animate: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.4,
-    },
-  },
-  exit: {
-    opacity: 0,
-    y: -20,
-    transition: {
-      duration: 0.3,
-    },
-  },
-};
-
-export default function MonitorDetail({ params }: { params: Promise<{ id: string }> }) {
-  const t = useTranslations();
-  const resolvedParams = use(params);
-  const router = useRouter();
-
-  const { monitor, monitoringData, isLoading, isError, error } = useMonitor(resolvedParams.id);
-
-  const handleRefresh = async () => {
-    await revalidateData();
-  };
-
-  const handleBack = () => {
-    try {
-      router.back();
-      setTimeout(() => {
-        if (window.location.pathname === `/monitor/${resolvedParams.id}`) {
-          router.push('/');
-        }
-      }, 500);
-    } catch {
-      router.push('/');
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <motion.div initial="initial" animate="animate" exit="exit" variants={pageVariants}>
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-6xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-              className="mb-4"
-            >
-              <div className="h-10 w-32 bg-default-100 rounded-lg" />
-            </motion.div>
-            <MonitorCardSkeleton />
-          </div>
-        </div>
-      </motion.div>
-    );
+  if (!pageConfig) {
+    notFound();
   }
 
-  if (isError || !monitor) {
-    return (
-      <motion.div
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        variants={pageVariants}
-        className="flex flex-col items-center justify-center min-h-screen gap-4"
-      >
-        <p className="text-xl text-gray-500">
-          {error instanceof Error ? error.message : t('error.monitorNotFound')}
-        </p>
-        <button
-          type="button"
-          onClick={handleBack}
-          className="px-4 py-2 text-sm text-white bg-blue-500 rounded-md hover:bg-blue-600 transition-colors"
-        >
-          {t('page.back')}
-        </button>
-      </motion.div>
-    );
-  }
+  const { config: footerConfig } = await getGlobalConfig(pageConfig.pageId);
 
   return (
-    <motion.div initial="initial" animate="animate" exit="exit" variants={pageVariants}>
-      <AutoRefresh onRefresh={handleRefresh} interval={60000}>
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-6xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-              className="mb-4"
-            >
-              <button
-                type="button"
-                onClick={handleBack}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                ← {t('page.backMonitor')}
-              </button>
-            </motion.div>
-            <MonitorCard
-              monitor={monitor}
-              heartbeats={monitoringData.heartbeatList[monitor.id] || []}
-              uptime24h={monitoringData.uptimeList[`${monitor.id}_24`] || 0}
-              isHome={false}
-            />
-          </div>
-        </div>
-      </AutoRefresh>
-    </motion.div>
+    <PageConfigProvider initialConfig={pageConfig}>
+      <AppShell footerConfig={footerConfig}>
+        <MonitorDetailContent monitorId={params.id} />
+      </AppShell>
+    </PageConfigProvider>
   );
 }

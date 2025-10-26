@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { ResponsStats } from './charts/ResponsStats';
 import { StatusBlockIndicator } from './charts/StatusBlockIndicator';
+import { usePageConfig } from './context/PageConfigContext';
 
 interface MonitorCardLiteProps extends MonitorCardProps {
   onToggleView: (e: React.MouseEvent) => void;
@@ -22,6 +23,7 @@ export function MonitorCardLite({
   disableViewToggle = false,
 }: MonitorCardLiteProps) {
   const router = useRouter();
+  const pageConfig = usePageConfig();
   const lastHeartbeat = heartbeats[heartbeats.length - 1];
   const status = lastHeartbeat?.status ?? 0;
   const chartColor = status === 1 ? 'success' : status === 2 ? 'warning' : 'danger';
@@ -37,7 +39,8 @@ export function MonitorCardLite({
 
   const handleClick = () => {
     if (isHome) {
-      router.push(`/monitor/${monitor.id}`);
+      const detailPath = `/monitor/${monitor.id}?pageId=${encodeURIComponent(pageConfig.pageId)}`;
+      router.push(detailPath);
     }
   };
 

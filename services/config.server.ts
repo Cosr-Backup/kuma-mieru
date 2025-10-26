@@ -1,5 +1,5 @@
-import { apiConfig } from '@/config/api';
-import type { GlobalConfig, Maintenance } from '@/types/config';
+import { getConfig } from '@/config/api';
+import type { Config, GlobalConfig, Maintenance } from '@/types/config';
 import { ConfigError } from '@/utils/errors';
 import { extractPreloadData } from '@/utils/json-processor';
 import { sanitizeJsonString } from '@/utils/json-sanitizer';
@@ -9,6 +9,16 @@ import { cache } from 'react';
 import { ApiDataError, logApiError } from './utils/api-service';
 import { customFetchOptions, ensureUTCTimezone } from './utils/common';
 import { customFetch } from './utils/fetch';
+
+function resolvePageConfig(pageId?: string): Config {
+  const config = getConfig(pageId);
+
+  if (!config) {
+    throw new ConfigError(`Invalid status page id: ${pageId ?? 'undefined'}`);
+  }
+
+  return config;
+}
 
 function processMaintenanceData(maintenanceList: Maintenance[]): Maintenance[] {
   return maintenanceList.map((maintenance) => {
@@ -47,9 +57,11 @@ function processMaintenanceData(maintenanceList: Maintenance[]): Maintenance[] {
  * 获取维护计划数据
  * @returns 处理后的维护计划数据
  */
-export async function getMaintenanceData() {
+export async function getMaintenanceData(pageId?: string) {
+  const config = resolvePageConfig(pageId);
+
   try {
-    const preloadData = await getPreloadData();
+    const preloadData = await getPreloadData(config);
 
     if (!Array.isArray(preloadData.maintenanceList)) {
       throw new ApiDataError('Maintenance list data must be an array');
@@ -64,7 +76,7 @@ export async function getMaintenanceData() {
     };
   } catch (error) {
     logApiError('get maintenance data', error, {
-      endpoint: `${apiConfig.apiEndpoint}/maintenance`,
+      endpoint: `${config.apiEndpoint}/maintenance`,
     });
 
     return {
@@ -75,9 +87,11 @@ export async function getMaintenanceData() {
   }
 }
 
-export const getGlobalConfig = cache(async (): Promise<GlobalConfig> => {
+export const getGlobalConfig = cache(async (pageId?: string): Promise<GlobalConfig> => {
+  const config = resolvePageConfig(pageId);
+
   try {
-    const preloadData = await getPreloadData();
+    const preloadData = await getPreloadData(config);
 
     if (!preloadData.config) {
       throw new ConfigError('Configuration data is missing');
@@ -102,10 +116,10 @@ export const getGlobalConfig = cache(async (): Promise<GlobalConfig> => {
           ? 'light'
           : 'system';
 
-    const maintenanceData = await getMaintenanceData();
+    const maintenanceData = await getMaintenanceData(config.pageId);
     const maintenanceList = maintenanceData.maintenanceList || [];
 
-    const config: GlobalConfig = {
+    const result: GlobalConfig = {
       config: {
         ...preloadData.config,
         theme,
@@ -120,12 +134,15 @@ export const getGlobalConfig = cache(async (): Promise<GlobalConfig> => {
       maintenanceList: maintenanceList,
     };
 
-    return config;
+    return result;
   } catch (error) {
     console.error(
       'Failed to get configuration data:',
       error instanceof ConfigError ? error.message : 'Unknown error',
-      error,
+      {
+        error,
+        endpoint: config.htmlEndpoint,
+      },
     );
 
     return {
@@ -148,9 +165,9 @@ export const getGlobalConfig = cache(async (): Promise<GlobalConfig> => {
   }
 });
 
-export async function getPreloadData() {
+export async function getPreloadData(config: Config) {
   try {
-    const htmlResponse = await customFetch(apiConfig.htmlEndpoint, customFetchOptions);
+    const htmlResponse = await customFetch(config.htmlEndpoint, customFetchOptions);
 
     if (!htmlResponse.ok) {
       throw new ConfigError(
@@ -190,8 +207,8 @@ export async function getPreloadData() {
       console.warn('Preload script missing, attempting status page API fallback');
       try {
         const apiFallback = await fetchPreloadDataFromApi({
-          baseUrl: apiConfig.baseUrl,
-          pageId: apiConfig.pageId,
+          baseUrl: config.baseUrl,
+          pageId: config.pageId,
           fetchFn: (url, init) =>
             customFetch(url, init as RequestInit & { maxRetries?: number; retryDelay?: number; timeout?: number }),
           requestInit: customFetchOptions,
@@ -232,7 +249,7 @@ export async function getPreloadData() {
       throw error;
     }
     console.error('Failed to get preload data:', {
-      endpoint: apiConfig.htmlEndpoint,
+      endpoint: config.htmlEndpoint,
       error:
         error instanceof Error
           ? {

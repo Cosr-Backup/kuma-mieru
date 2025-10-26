@@ -43,6 +43,7 @@ next-env.d.ts
 !.env.example
 
 generated-*.json
+generated/
 
 dist/
 .open-next/

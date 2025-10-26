@@ -3,14 +3,24 @@ import generatedConfig from './generated-config.json';
 import type { GeneratedConfig } from './types';
 
 // 验证生成的配置
+const siteMetaSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  icon: z.string(),
+  iconCandidates: z.array(z.string()).min(1),
+});
+
 const configSchema = z.object({
   baseUrl: z.string().url(),
   pageId: z.string(),
-  siteMeta: z.object({
-    title: z.string(),
-    description: z.string(),
-    icon: z.string(),
-  }),
+  pageIds: z.array(z.string()).min(1),
+  pages: z.array(
+    z.object({
+      id: z.string(),
+      siteMeta: siteMetaSchema,
+    }),
+  ),
+  siteMeta: siteMetaSchema,
   isPlaceholder: z.boolean(),
   isEditThisPage: z.boolean(),
   isShowStarButton: z.boolean(),

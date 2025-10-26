@@ -61,7 +61,7 @@ export const I18NSwitch = () => {
             className="flex flex-row items-center gap-2 text-default-500"
             startContent={
               <Image
-                src={`https://fastly.jsdelivr.net/gh/HatScripts/circle-flags@2.7.0/flags/${item.alpha2Code.toLowerCase()}.svg`}
+                src={`/flags/${item.alpha2Code}.svg`}
                 alt={item.flag}
                 width={24}
                 height={24}

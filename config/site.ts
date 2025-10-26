@@ -35,14 +35,36 @@ const resolveIconUrl = (iconPath?: string): string => {
     : `${env.config.baseUrl}/${iconPath.replace(/^\//, '')}`;
 };
 
+const resolveIconCandidates = (icons: string[]): string[] => {
+  const deduped: string[] = [];
+  const seen = new Set<string>();
+
+  for (const icon of icons) {
+    const resolved = resolveIconUrl(icon);
+    if (seen.has(resolved)) continue;
+    seen.add(resolved);
+    deduped.push(resolved);
+  }
+
+  if (deduped.length === 0) {
+    const fallback = resolveIconUrl();
+    deduped.push(fallback);
+  }
+
+  return deduped;
+};
+
 const getVisibleNavItems = (items: NavItem[]): NavItem[] => {
   return items.filter((item) => (item.label !== 'page.edit' ? true : env.config.isEditThisPage));
 };
 
+const iconCandidates = resolveIconCandidates(env.config.siteMeta.iconCandidates);
+
 export const siteConfig = {
   name: env.config.siteMeta.title || baseConfig.name,
   description: env.config.siteMeta.description || baseConfig.description,
-  icon: resolveIconUrl(env.config.siteMeta.icon),
+  icon: iconCandidates[0],
+  iconCandidates,
   navItems: getVisibleNavItems(navItems),
   navMenuItems: getVisibleNavItems(navItems),
   links: {

@@ -1,4 +1,4 @@
-import { apiConfig } from '@/config/api';
+import { getConfig } from '@/config/api';
 import { getPreloadData } from '@/services/config.server';
 import type { HeartbeatData, MonitorGroup, MonitoringData, UptimeData } from '@/types/monitor';
 import { customFetchOptions, ensureUTCTimezone } from './utils/common';
@@ -30,13 +30,26 @@ class MonitorDataError extends Error {
   }
 }
 
-export async function getMonitoringData(): Promise<{
+export async function getMonitoringData(pageId?: string): Promise<{
   monitorGroups: MonitorGroup[];
   data: MonitoringData;
 }> {
+  const config = getConfig(pageId);
+
+  if (!config) {
+    console.error('Invalid status page id received for monitoring data', {
+      pageId,
+    });
+    return {
+      monitorGroups: [],
+      data: { heartbeatList: {}, uptimeList: {} },
+    };
+  }
+
   try {
+
     // 使用共享的预加载数据获取函数
-    const preloadData = await getPreloadData();
+    const preloadData = await getPreloadData(config);
 
     // 验证监控组数据
     if (!Array.isArray(preloadData.publicGroupList)) {
@@ -44,7 +57,7 @@ export async function getMonitoringData(): Promise<{
     }
 
     // 获取监控数据
-    const apiResponse = await customFetch(apiConfig.apiEndpoint, customFetchOptions);
+    const apiResponse = await customFetch(config.apiEndpoint, customFetchOptions);
 
     if (!apiResponse.ok) {
       throw new MonitorDataError(
@@ -102,7 +115,7 @@ export async function getMonitoringData(): Promise<{
                 cause: error.cause,
               }
             : error,
-        endpoint: apiConfig.apiEndpoint,
+        endpoint: config.apiEndpoint,
       },
     );
 

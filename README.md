@@ -259,7 +259,7 @@ docker run -d \
 | 变量名                   | 必填 | 说明                           | 示例/默认值                                        |
 | ------------------------ | ---- | ------------------------------ | -------------------------------------------------- |
 | UPTIME_KUMA_BASE_URL     | Yes  | Uptime Kuma 实例的基础 URL     | <https://example.kuma-mieru.invalid>                 |
-| PAGE_ID                  | Yes  | Uptime Kuma 实例的状态页面 ID  | test1                                              |
+| PAGE_ID                  | Yes  | Uptime Kuma 实例的状态页面 ID，支持使用逗号分隔多个页面，首个值为默认页面 | default,status-asia |
 | FEATURE_EDIT_THIS_PAGE   | No   | 是否展示 "Edit This Page" 按钮 | false                                              |
 | FEATURE_SHOW_STAR_BUTTON | No   | 是否展示 "Star on Github" 按钮 | true                                               |
 | FEATURE_TITLE            | No   | 自定义页面标题                 | Kuma Mieru                                         |

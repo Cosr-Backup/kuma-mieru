@@ -9,20 +9,117 @@ import type { PreloadData } from '../types/config';
 
 import 'dotenv/config';
 
+const DEFAULT_SITE_TITLE = 'Kuma Mieru';
+const DEFAULT_SITE_DESCRIPTION = 'A beautiful and modern uptime monitoring dashboard';
+const DEFAULT_SITE_ICON = '/icon.svg';
+
 const siteMetaSchema = z.object({
-  title: z.string().default('Kuma Mieru'),
-  description: z.string().default('A beautiful and modern uptime monitoring dashboard'),
-  icon: z.string().default('/icon.svg'),
+  title: z.string().default(DEFAULT_SITE_TITLE),
+  description: z.string().default(DEFAULT_SITE_DESCRIPTION),
+  icon: z.string().default(DEFAULT_SITE_ICON),
+  iconCandidates: z.array(z.string()).min(1).default([DEFAULT_SITE_ICON]),
+});
+const DEFAULT_SITE_META = siteMetaSchema.parse({});
+
+const pageConfigSchema = z.object({
+  id: z.string(),
+  siteMeta: siteMetaSchema,
 });
 
 const configSchema = z.object({
   baseUrl: z.string().url(),
   pageId: z.string(),
+  pageIds: z.array(z.string()).min(1),
+  pages: z.array(pageConfigSchema).min(1),
   siteMeta: siteMetaSchema,
   isPlaceholder: z.boolean().default(false),
   isEditThisPage: z.boolean().default(false),
   isShowStarButton: z.boolean().default(true),
 });
+
+type SiteMeta = z.infer<typeof siteMetaSchema>;
+
+interface StringOverride {
+  value: string | undefined;
+  isDefined: boolean;
+}
+
+const getFeatureOverride = (name: string): StringOverride => {
+  const value = process.env[name];
+  return {
+    value,
+    isDefined: value !== undefined,
+  };
+};
+
+const formatOverrideForLog = ({ isDefined, value }: StringOverride): string => {
+  if (!isDefined) return 'Not set';
+  if (value === '') return '(empty string)';
+  return value ?? '(undefined)';
+};
+
+const buildIconCandidates = (
+  sources: Array<string | undefined | null>,
+  defaultIcon: string,
+): string[] => {
+  const seen = new Set<string>();
+  const candidates: string[] = [];
+
+  for (const source of sources) {
+    if (typeof source !== 'string') continue;
+    const trimmed = source.trim();
+    if (!trimmed) continue;
+    if (seen.has(trimmed)) continue;
+    candidates.push(trimmed);
+    seen.add(trimmed);
+  }
+
+  if (!seen.has(defaultIcon)) {
+    candidates.push(defaultIcon);
+    seen.add(defaultIcon);
+  }
+
+  if (candidates.length === 0) {
+    candidates.push(defaultIcon);
+  }
+
+  return candidates;
+};
+
+const resolveSiteMeta = ({
+  overrides,
+  remoteMeta,
+}: {
+  overrides: {
+    title: StringOverride;
+    description: StringOverride;
+    icon: StringOverride;
+  };
+  remoteMeta?: Partial<Pick<SiteMeta, 'title' | 'description' | 'icon'>>;
+}): SiteMeta => {
+  const title = overrides.title.isDefined
+    ? overrides.title.value ?? ''
+    : remoteMeta?.title ?? DEFAULT_SITE_META.title;
+
+  const description = overrides.description.isDefined
+    ? overrides.description.value ?? ''
+    : remoteMeta?.description ?? DEFAULT_SITE_META.description;
+
+  const iconCandidates = buildIconCandidates(
+    [
+      overrides.icon.isDefined ? overrides.icon.value : undefined,
+      remoteMeta?.icon,
+    ],
+    DEFAULT_SITE_META.icon,
+  );
+
+  return siteMetaSchema.parse({
+    title,
+    description,
+    icon: iconCandidates[0],
+    iconCandidates,
+  });
+};
 
 function getRequiredEnvVar(name: string): string {
   const value = process.env[name];
@@ -44,32 +141,23 @@ function getBooleanEnvVar(name: string, defaultValue = true): boolean {
   return lowercaseValue === 'true';
 }
 
-function getOptionalEnvVar(name: string, defaultValue: string | null = null): string | null {
-  const value = process.env[name];
-  return value !== undefined ? value : defaultValue;
-}
-
 async function fetchSiteMeta(baseUrl: string, pageId: string) {
-  const customTitle = getOptionalEnvVar('FEATURE_TITLE');
-  const customDescription = getOptionalEnvVar('FEATURE_DESCRIPTION');
-  const customIcon = getOptionalEnvVar('FEATURE_ICON');
+  const titleOverride = getFeatureOverride('FEATURE_TITLE');
+  const descriptionOverride = getFeatureOverride('FEATURE_DESCRIPTION');
+  const iconOverride = getFeatureOverride('FEATURE_ICON');
+  const overrides = {
+    title: titleOverride,
+    description: descriptionOverride,
+    icon: iconOverride,
+  };
 
   console.log('[env] [feature_fields]');
-  console.log(`[env] - FEATURE_TITLE: ${customTitle || 'Not set'}`);
-  console.log(`[env] - FEATURE_DESCRIPTION: ${customDescription || 'Not set'}`);
-  console.log(`[env] - FEATURE_ICON: ${customIcon || 'Not set'}`);
+  console.log(`[env] - FEATURE_TITLE: ${formatOverrideForLog(titleOverride)}`);
+  console.log(`[env] - FEATURE_DESCRIPTION: ${formatOverrideForLog(descriptionOverride)}`);
+  console.log(`[env] - FEATURE_ICON: ${formatOverrideForLog(iconOverride)}`);
 
-  const hasAnyCustomValue = customTitle || customDescription || customIcon;
-
-  const hasAllCustomValues = customTitle && customDescription && customIcon;
-
-  if (hasAllCustomValues) {
-    return siteMetaSchema.parse({
-      title: customTitle,
-      description: customDescription,
-      icon: customIcon,
-    });
-  }
+  const hasAnyOverride =
+    titleOverride.isDefined || descriptionOverride.isDefined || iconOverride.isDefined;
 
   try {
     const response = await fetch(`${baseUrl}/status/${pageId}`);
@@ -112,25 +200,50 @@ async function fetchSiteMeta(baseUrl: string, pageId: string) {
       throw new Error('Failed to resolve preload data from HTML or API');
     }
 
-    // 合并自定义值，自定义优先级 > API
-    return siteMetaSchema.parse({
-      title: customTitle || preloadData.config.title || undefined, // 触发 zod 默认值
-      description: customDescription || preloadData.config.description || undefined,
-      icon: customIcon || preloadData.config.icon || undefined,
+    const remoteMeta: Partial<Pick<SiteMeta, 'title' | 'description' | 'icon'>> = {
+      title: preloadData.config.title ?? undefined,
+      description: preloadData.config.description ?? undefined,
+      icon: preloadData.config.icon ?? undefined,
+    };
+
+    const resolvedMeta = resolveSiteMeta({
+      overrides,
+      remoteMeta,
     });
+
+    if (resolvedMeta.iconCandidates.length > 1) {
+      console.log(
+        `[env] - FEATURE_ICON_CANDIDATES: ${resolvedMeta.iconCandidates.map((item, index) => {
+          const label =
+            index === 0 && iconOverride.isDefined
+              ? `${item} (env)`
+              : index === 0
+              ? `${item} (resolved)`
+              : item;
+          return label;
+        }).join(' -> ')}`,
+      );
+    }
+
+    return resolvedMeta;
   } catch (error) {
     console.error('Error fetching site meta:', error);
 
-    if (hasAnyCustomValue) {
-      return siteMetaSchema.parse({
-        title: customTitle || undefined,
-        description: customDescription || undefined,
-        icon: customIcon || undefined,
-      });
+    if (hasAnyOverride) {
+      return resolveSiteMeta({ overrides });
     }
 
     return siteMetaSchema.parse({});
   }
+}
+
+function parsePageIds(rawValue: string): string[] {
+  const parsed = rawValue
+    .split(/[,\s]+/)
+    .map((id) => id.trim())
+    .filter((id) => id.length > 0);
+
+  return Array.from(new Set(parsed));
 }
 
 async function generateConfig() {
@@ -145,7 +258,14 @@ async function generateConfig() {
     }
 
     const baseUrl = getRequiredEnvVar('UPTIME_KUMA_BASE_URL');
-    const pageId = getRequiredEnvVar('PAGE_ID');
+    const rawPageIds = getRequiredEnvVar('PAGE_ID');
+    const pageIds = parsePageIds(rawPageIds);
+
+    if (pageIds.length === 0) {
+      throw new Error('PAGE_ID must contain at least one status page identifier');
+    }
+
+    const defaultPageId = pageIds[0];
 
     // 获取并验证配置项
     try {
@@ -160,12 +280,30 @@ async function generateConfig() {
     console.log(`[env] - isEditThisPage: ${isEditThisPage}`);
     console.log(`[env] - isShowStarButton: ${isShowStarButton}`);
 
-    const siteMeta = await fetchSiteMeta(baseUrl, pageId);
+    const pageConfigEntries = [] as Array<{ id: string; siteMeta: z.infer<typeof siteMetaSchema> }>;
+
+    for (const id of pageIds) {
+      try {
+        const siteMeta = await fetchSiteMeta(baseUrl, id);
+        pageConfigEntries.push({ id, siteMeta });
+      } catch (error) {
+        console.error(`Failed to fetch site meta for page "${id}":`, error);
+        pageConfigEntries.push({ id, siteMeta: siteMetaSchema.parse({}) });
+      }
+    }
+
+    const defaultSiteMeta = pageConfigEntries.find((entry) => entry.id === defaultPageId)?.siteMeta;
+
+    if (!defaultSiteMeta) {
+      throw new Error(`Unable to resolve site metadata for default page "${defaultPageId}"`);
+    }
 
     const config = configSchema.parse({
       baseUrl,
-      pageId,
-      siteMeta,
+      pageId: defaultPageId,
+      pageIds,
+      pages: pageConfigEntries,
+      siteMeta: defaultSiteMeta,
       isPlaceholder: false,
       isEditThisPage,
       isShowStarButton,

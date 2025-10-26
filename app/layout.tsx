@@ -2,9 +2,7 @@ import '@/styles/globals.css';
 import { clsx } from 'clsx';
 import type { Metadata, Viewport } from 'next';
 
-import { Footer } from '@/components/Footer';
 import Analytics from '@/components/basic/google-analytics';
-import { Navbar } from '@/components/basic/navbar';
 import { fontMono, fontSans } from '@/config/fonts';
 import { siteConfig } from '@/config/site';
 import packageJson from '@/package.json';
@@ -22,7 +20,7 @@ export const metadata: Metadata = {
   },
   description: siteConfig.description || 'Kuma Mieru',
   icons: {
-    icon: siteConfig.icon,
+    icon: siteConfig.iconCandidates,
   },
   generator: `https://github.com/Alice39s/kuma-mieru v${packageJson.version}`,
   formatDetection: {
@@ -62,10 +60,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {googleAnalyticsId && <Analytics id={googleAnalyticsId} />}
         <NextIntlClientProvider messages={messages}>
           <Providers themeProps={{ attribute: 'class', defaultTheme: theme }}>
-            <div className="relative flex flex-col h-screen">
-              <Navbar />
-              <main className="container mx-auto max-w-7xl pt-4 px-6 grow">{children}</main>
-              <Footer config={config} />
+            <div className="min-h-screen bg-background">
+              {children}
               <Toaster position="top-center" richColors />
             </div>
           </Providers>

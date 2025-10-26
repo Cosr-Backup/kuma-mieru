@@ -252,7 +252,7 @@ Then, the environment variables you need to configure are as follows:
 | Variable Name            | Required | Description                             | Example                            |
 | ------------------------ | -------- | --------------------------------------- | ---------------------------------- |
 | UPTIME_KUMA_BASE_URL     | Yes      | Base URL of Uptime Kuma instance        | <https://example.kuma-mieru.invalid> |
-| PAGE_ID                  | Yes      | Status page path of Uptime Kuma         | test1                              |
+| PAGE_ID                  | Yes      | Status page path of Uptime Kuma. Supports comma-separated multiple IDs with the first value as the default page | default,status-asia |
 | FEATURE_EDIT_THIS_PAGE   | No       | Whether to show "Edit This Page" button | false                              |
 | FEATURE_SHOW_STAR_BUTTON | No       | Whether to show "Star on Github" button | true                               |
 | FEATURE_TITLE            | No       | Custom page title                       | My Monitoring Dashboard            |
