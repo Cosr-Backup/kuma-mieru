@@ -15,11 +15,11 @@ import { link as linkStyles } from '@heroui/theme';
 import clsx from 'clsx';
 import Image from 'next/image';
 import NextLink from 'next/link';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { GithubIcon, SearchIcon } from '@/components/basic/icons';
 import { ThemeSwitch } from '@/components/basic/theme-switch';
-import { siteConfig } from '@/config/site';
+import { resolveIconCandidates, siteConfig } from '@/config/site';
 import { motion } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -27,10 +27,6 @@ import { useNodeSearch } from '../context/NodeSearchContext';
 import { usePageConfig } from '../context/PageConfigContext';
 import { useConfig } from '../utils/swr';
 import { I18NSwitch } from './i18n-switch';
-
-const isExternalUrl = (url: string) => {
-  return url?.startsWith('http://') || url?.startsWith('https://');
-};
 
 export const Navbar = () => {
   const t = useTranslations();
@@ -54,7 +50,21 @@ export const Navbar = () => {
   const { config: globalConfig } = useConfig();
 
   const resolvedTitle = globalConfig?.config.title || pageConfig.siteMeta.title;
-  const resolvedIcon = globalConfig?.config.icon || pageConfig.siteMeta.icon;
+
+  const mergedIconSources = useMemo(() => {
+    const sources = [...pageConfig.siteMeta.iconCandidates];
+    const runtimeIcon = globalConfig?.config.icon;
+    if (runtimeIcon) {
+      sources.push(runtimeIcon);
+    }
+    return sources;
+  }, [pageConfig.siteMeta.iconCandidates, globalConfig?.config.icon]);
+
+  const resolvedIconCandidates = useMemo(
+    () => resolveIconCandidates(mergedIconSources),
+    [mergedIconSources],
+  );
+
   const homeHref = pageConfig.pageId === pageConfig.defaultPageId ? '/' : `/${pageConfig.pageId}`;
 
   const handleSearchChange = useCallback(
@@ -120,12 +130,7 @@ export const Navbar = () => {
     </Button>
   );
 
-  const getIconUrl = () => {
-    if (resolvedIcon) {
-      return isExternalUrl(resolvedIcon) ? resolvedIcon : resolvedIcon;
-    }
-    return '';
-  };
+  const getIconUrl = () => resolvedIconCandidates[0] || siteConfig.icon || '/icon.svg';
 
   return (
     <HeroUINavbar maxWidth="xl" position="static">

@@ -126,3 +126,30 @@ export function extractSentence(markdown: string): string {
 
   return cleaned.length > 100 ? `${cleaned.slice(0, 100)} ...` : cleaned;
 }
+
+/**
+ * Convert timezone offset strings (e.g. "+08:00" or "-0530") into milliseconds.
+ * @param offset timezone offset string or undefined/"UTC"
+ * @returns offset duration in milliseconds, positive east of UTC
+ */
+export function timezoneOffsetToMs(offset?: string): number {
+  if (!offset || offset === 'UTC') {
+    return 0;
+  }
+
+  const normalized = offset.replace(':', '');
+  if (!/^[+-]\d{4}$/.test(normalized)) {
+    return 0;
+  }
+
+  const sign = normalized.startsWith('-') ? -1 : 1;
+  const hours = Number.parseInt(normalized.slice(1, 3), 10);
+  const minutes = Number.parseInt(normalized.slice(3, 5), 10);
+
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+    return 0;
+  }
+
+  const totalMinutes = hours * 60 + minutes;
+  return sign * totalMinutes * 60 * 1000;
+}

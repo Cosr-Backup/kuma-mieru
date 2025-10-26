@@ -64,7 +64,8 @@
     "toolbar": "도구 모음",
     "mobileToolbar": "모바일 도구 모음",
     "mobileNav": "모바일 메인 네비게이션",
-    "search": "검색"
+    "search": "검색",
+    "pageTabs": "상태 페이지 탭"
   },
   "mode": {
     "light": "라이트 모드",

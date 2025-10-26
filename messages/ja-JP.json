@@ -64,7 +64,8 @@
     "toolbar": "ツールバー",
     "mobileToolbar": "モバイルツールバー",
     "mobileNav": "モバイルメインナビゲーション",
-    "search": "検索"
+    "search": "検索",
+    "pageTabs": "ステータスページ切り替え"
   },
   "mode": {
     "light": "ライト",

@@ -6,14 +6,20 @@ import { Card, CardBody, Chip, Progress } from '@heroui/react';
 import clsx from 'clsx';
 import { AlertCircle, Calendar, Clock, Timer, Wrench } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
+import type { DateTimeFormatOptions } from 'next-intl';
 import { useEffect } from 'react';
-import { dateStringToTimestamp } from '../utils/format';
+import { dateStringToTimestamp, timezoneOffsetToMs } from '../utils/format';
 import { getMarkdownClasses, useMarkdown } from '../utils/markdown';
 
 function MaintenanceAlert({ maintenance }: { maintenance: Maintenance }) {
   const t = useTranslations('maintenance');
   const format = useFormatter();
   const now = Date.now();
+  const dateTimeFormat: DateTimeFormatOptions = {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'UTC',
+  };
 
   const isActive = maintenance.status === 'under-maintenance';
   const isScheduled = maintenance.status === 'scheduled';
@@ -63,6 +69,9 @@ function MaintenanceAlert({ maintenance }: { maintenance: Maintenance }) {
 
     const startTime = dateStringToTimestamp(startDate, timeZoneOffset);
     const endTime = dateStringToTimestamp(endDate, timeZoneOffset);
+    const timezoneOffsetMs = timezoneOffsetToMs(timeZoneOffset);
+    const displayStartTime = startTime + timezoneOffsetMs;
+    const displayEndTime = endTime + timezoneOffsetMs;
 
     // 在开发环境中记录转换后的时间戳
     if (process.env.NODE_ENV === 'development') {
@@ -108,11 +117,11 @@ function MaintenanceAlert({ maintenance }: { maintenance: Maintenance }) {
               <div className="flex justify-between items-center text-sm">
                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                   <Calendar className="h-4 w-4" />
-                  <span>{format.dateTime(startTime, 'normal')}</span>
+                  <span>{format.dateTime(displayStartTime, dateTimeFormat)}</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                   <Clock className="h-4 w-4" />
-                  <span>{format.dateTime(endTime, 'normal')}</span>
+                  <span>{format.dateTime(displayEndTime, dateTimeFormat)}</span>
                 </div>
               </div>
 
@@ -169,9 +178,9 @@ function MaintenanceAlert({ maintenance }: { maintenance: Maintenance }) {
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                 <Calendar className="h-4 w-4" />
-                <span>{format.dateTime(startTime, 'normal')}</span>
+                <span>{format.dateTime(displayStartTime, dateTimeFormat)}</span>
                 <span>-</span>
-                <span>{format.dateTime(endTime, 'normal')}</span>
+                <span>{format.dateTime(displayEndTime, dateTimeFormat)}</span>
               </div>
 
               <div className="flex items-center justify-between pt-2 border-t border-blue-200 dark:border-blue-800">

@@ -1,5 +1,6 @@
 import { getConfig } from '@/config/api';
 import type { Config, GlobalConfig, Maintenance } from '@/types/config';
+import type { PageTabMeta } from '@/types/page';
 import { ConfigError } from '@/utils/errors';
 import { extractPreloadData } from '@/utils/json-processor';
 import { sanitizeJsonString } from '@/utils/json-sanitizer';
@@ -86,6 +87,69 @@ export async function getMaintenanceData(pageId?: string) {
     };
   }
 }
+
+export const getPageTabsMetadata = cache(async (): Promise<PageTabMeta[]> => {
+  const baseConfig = getConfig();
+
+  if (!baseConfig) {
+    return [];
+  }
+
+  const uniquePageIds = Array.from(new Set(baseConfig.pageIds));
+
+  const tabs = await Promise.all(
+    uniquePageIds.map(async (pageId) => {
+      const pageConfig = getConfig(pageId);
+
+      if (!pageConfig) {
+        return null;
+      }
+
+      try {
+        const preloadData = await getPreloadData(pageConfig);
+        const meta = preloadData.config ?? {};
+
+        const title = typeof meta.title === 'string' && meta.title.trim().length > 0
+          ? meta.title.trim()
+          : pageConfig.siteMeta.title?.trim() || pageId;
+
+        const description =
+          typeof meta.description === 'string' && meta.description.trim().length > 0
+            ? meta.description.trim()
+            : pageConfig.siteMeta.description?.trim();
+
+        const icon =
+          typeof meta.icon === 'string' && meta.icon.trim().length > 0
+            ? meta.icon.trim()
+            : pageConfig.siteMeta.icon;
+
+        return {
+          id: pageId,
+          title,
+          description,
+          icon,
+        } satisfies PageTabMeta;
+      } catch (error) {
+        console.error('Failed to resolve metadata for status page tab', {
+          pageId,
+          error,
+        });
+
+        const fallbackTitle = pageConfig.siteMeta.title?.trim();
+        const fallbackDescription = pageConfig.siteMeta.description?.trim();
+
+        return {
+          id: pageId,
+          title: fallbackTitle && fallbackTitle.length > 0 ? fallbackTitle : pageId,
+          description: fallbackDescription && fallbackDescription.length > 0 ? fallbackDescription : undefined,
+          icon: pageConfig.siteMeta.icon,
+        } satisfies PageTabMeta;
+      }
+    }),
+  );
+
+  return tabs.filter((tab) => tab !== null) as PageTabMeta[];
+});
 
 export const getGlobalConfig = cache(async (pageId?: string): Promise<GlobalConfig> => {
   const config = resolvePageConfig(pageId);

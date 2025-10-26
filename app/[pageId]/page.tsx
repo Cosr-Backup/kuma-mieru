@@ -2,7 +2,7 @@ import { PageConfigProvider } from '@/components/context/PageConfigContext';
 import { AppShell } from '@/components/layout/AppShell';
 import { StatusPage } from '@/components/status/StatusPage';
 import { getAvailablePageIds, getConfig } from '@/config/api';
-import { getGlobalConfig } from '@/services/config.server';
+import { getGlobalConfig, getPageTabsMetadata } from '@/services/config.server';
 import { notFound } from 'next/navigation';
 
 export async function generateStaticParams() {
@@ -28,11 +28,14 @@ export default async function StatusPageRoute({
     notFound();
   }
 
-  const { config: footerConfig } = await getGlobalConfig(pageConfig.pageId);
+  const [{ config: footerConfig }, pageTabs] = await Promise.all([
+    getGlobalConfig(pageConfig.pageId),
+    getPageTabsMetadata(),
+  ]);
 
   return (
     <PageConfigProvider initialConfig={pageConfig}>
-      <AppShell footerConfig={footerConfig}>
+      <AppShell footerConfig={footerConfig} pageTabs={pageTabs}>
         <StatusPage />
       </AppShell>
     </PageConfigProvider>

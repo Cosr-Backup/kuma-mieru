@@ -20,7 +20,7 @@ import { Button, Tooltip } from '@heroui/react';
 import { LayoutGrid, LayoutList } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 const GLOBAL_VIEW_PREFERENCE_KEY = 'view-preference';
 
@@ -141,6 +141,15 @@ export function StatusPage() {
       return total + group.monitorList.length;
     }, 0);
   }, [filteredMonitorGroups, isFiltering]);
+
+  const lastPageIdRef = useRef(currentPageConfig.pageId);
+
+  useEffect(() => {
+    if (lastPageIdRef.current !== currentPageConfig.pageId) {
+      lastPageIdRef.current = currentPageConfig.pageId;
+      void revalidateData(currentPageConfig.pageId);
+    }
+  }, [currentPageConfig.pageId]);
 
   return (
     <AutoRefresh onRefresh={handleRefresh} interval={60000}>

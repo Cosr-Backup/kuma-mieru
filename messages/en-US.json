@@ -64,7 +64,8 @@
     "toolbar": "Toolbar",
     "mobileToolbar": "Mobile toolbar",
     "mobileNav": "Mobile navigation",
-    "search": "Search"
+    "search": "Search",
+    "pageTabs": "Status page tabs"
   },
   "mode": {
     "light": "Light",

@@ -27,15 +27,21 @@ const navItems: NavItem[] = [
   },
 ];
 
-const resolveIconUrl = (iconPath?: string): string => {
+export const resolveIconUrl = (iconPath?: string): string => {
   if (!iconPath) return baseConfig.icon;
 
-  return iconPath.startsWith('http')
-    ? iconPath
-    : `${env.config.baseUrl}/${iconPath.replace(/^\//, '')}`;
+  if (iconPath.startsWith('http')) {
+    return iconPath;
+  }
+
+  if (iconPath === baseConfig.icon) {
+    return baseConfig.icon;
+  }
+
+  return `${env.config.baseUrl}/${iconPath.replace(/^\//, '')}`;
 };
 
-const resolveIconCandidates = (icons: string[]): string[] => {
+export const resolveIconCandidates = (icons: string[]): string[] => {
   const deduped: string[] = [];
   const seen = new Set<string>();
 

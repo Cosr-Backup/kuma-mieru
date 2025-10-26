@@ -7,7 +7,6 @@ import { fontMono, fontSans } from '@/config/fonts';
 import { siteConfig } from '@/config/site';
 import packageJson from '@/package.json';
 import { getGlobalConfig } from '@/services/config.server';
-import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import { Providers } from './providers';
 
@@ -58,14 +57,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         )}
       >
         {googleAnalyticsId && <Analytics id={googleAnalyticsId} />}
-        <NextIntlClientProvider messages={messages}>
-          <Providers themeProps={{ attribute: 'class', defaultTheme: theme }}>
-            <div className="min-h-screen bg-background">
-              {children}
-              <Toaster position="top-center" richColors />
-            </div>
-          </Providers>
-        </NextIntlClientProvider>
+        <Providers
+          locale={locale}
+          messages={messages}
+          themeProps={{ attribute: 'class', defaultTheme: theme }}
+        >
+          <div className="min-h-screen bg-background">
+            {children}
+            <Toaster position="top-center" richColors />
+          </div>
+        </Providers>
       </body>
     </html>
   );
