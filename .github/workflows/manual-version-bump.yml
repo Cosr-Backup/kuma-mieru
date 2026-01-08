@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version_type:
-        description: "版本更新类型"
+        description: "Bump type"
         required: true
         type: choice
         options:
