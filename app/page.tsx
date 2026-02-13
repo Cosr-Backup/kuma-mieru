@@ -17,7 +17,7 @@ export default async function HomePage() {
   ]);
 
   return (
-    <PageConfigProvider initialConfig={pageConfig}>
+    <PageConfigProvider key={pageConfig.pageId} initialConfig={pageConfig}>
       <AppShell footerConfig={footerConfig} pageTabs={pageTabs}>
         <StatusPage />
       </AppShell>
