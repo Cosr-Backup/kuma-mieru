@@ -1,21 +1,9 @@
 import { PageConfigProvider } from '@/components/context/PageConfigContext';
 import { AppShell } from '@/components/layout/AppShell';
 import { StatusPage } from '@/components/status/StatusPage';
-import { getAvailablePageIds, getConfig, toPublicConfig } from '@/config/api';
+import { getConfig, toPublicConfig } from '@/config/api';
 import { getGlobalConfig, getPageTabsMetadata } from '@/services/config.server';
 import { notFound } from 'next/navigation';
-
-export async function generateStaticParams() {
-  const defaultConfig = getConfig();
-
-  if (!defaultConfig) {
-    return [];
-  }
-
-  return getAvailablePageIds()
-    .filter(pageId => pageId !== defaultConfig.defaultPageId)
-    .map(pageId => ({ pageId }));
-}
 
 export default async function StatusPageRoute({
   params,

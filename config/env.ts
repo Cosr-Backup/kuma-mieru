@@ -1,5 +1,18 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { z } from 'zod';
-import generatedConfig from './generated-config.json';
+
+function loadGeneratedConfig() {
+  const configPath = join(process.cwd(), 'config', 'generated-config.json');
+
+  try {
+    const raw = readFileSync(configPath, 'utf8');
+    return JSON.parse(raw);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to load generated config at ${configPath}: ${reason}`);
+  }
+}
 
 // 验证生成的配置
 const siteMetaSchema = z.object({
@@ -27,7 +40,7 @@ const configSchema = z.object({
 });
 
 // 确保配置符合schema
-const config = configSchema.parse(generatedConfig);
+const config = configSchema.parse(loadGeneratedConfig());
 
 // 仅包含运行时环境变量
 const runtimeEnvSchema = z.object({

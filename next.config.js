@@ -24,6 +24,10 @@ const normalizePatterns = patterns => {
 };
 
 const getImageRemotePatterns = () => {
+  if (process.env.STRICT_IMAGE_REMOTE_PATTERNS !== 'true') {
+    return normalizePatterns(defaultProtocols.map(protocol => ({ hostname: '*', protocol })));
+  }
+
   try {
     const configPath = join(process.cwd(), 'config', 'generated', 'image-domains.json');
     const config = JSON.parse(readFileSync(configPath, 'utf8'));
@@ -130,9 +134,6 @@ const productionConfig = {
   serverExternalPackages: ['sharp', 'cheerio'],
 
   async headers() {
-    // Parse ALLOW_EMBEDDING: false/unset=block, true=allow all, or comma-separated origin list
-    const allowEmbedding = process.env.ALLOW_EMBEDDING;
-
     const baseHeaders = [
       {
         key: 'X-Content-Type-Options',
@@ -147,40 +148,6 @@ const productionConfig = {
         value: 'public, max-age=300, stale-while-revalidate=60',
       },
     ];
-
-    if (!allowEmbedding || allowEmbedding === 'false') {
-      // Block iframe embedding (default)
-      baseHeaders.push({
-        key: 'X-Frame-Options',
-        value: 'SAMEORIGIN',
-      });
-    } else if (allowEmbedding === 'true') {
-      // Allow all origins (not recommended, security risk)
-      baseHeaders.push({
-        key: 'Content-Security-Policy',
-        value: "frame-ancestors 'self' *;",
-      });
-    } else {
-      // Parse comma-separated origin list, auto-add 'self'
-      const origins = allowEmbedding
-        .split(',')
-        .map(origin => origin.trim())
-        .filter(Boolean);
-
-      // Normalize origins: add https:// protocol if missing
-      const normalizedOrigins = origins.map(origin => {
-        if (origin.startsWith('http')) return origin;
-        return `https://${origin}`;
-      });
-
-      // Always include 'self' in allowed origins
-      const frameAncestors = `'self' ${normalizedOrigins.join(' ')}`;
-
-      baseHeaders.push({
-        key: 'Content-Security-Policy',
-        value: `frame-ancestors ${frameAncestors};`,
-      });
-    }
 
     return [
       {
