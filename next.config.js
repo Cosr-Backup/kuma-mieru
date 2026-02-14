@@ -71,6 +71,11 @@ const baseConfig = {
 
   images: {
     remotePatterns: getImageRemotePatterns(),
+    localPatterns: [
+      {
+        pathname: '/api/icon',
+      },
+    ],
     formats: ['image/avif', 'image/webp'],
     dangerouslyAllowSVG: true,
   },
