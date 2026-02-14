@@ -11,7 +11,10 @@ export interface MaintenanceTimeline {
   progressPercent: number;
 }
 
-export function useMaintenanceTimeline(maintenance: Maintenance, now: number): MaintenanceTimeline | null {
+export function useMaintenanceTimeline(
+  maintenance: Maintenance,
+  now: number
+): MaintenanceTimeline | null {
   const currentTimeSlot = maintenance.timeslotList?.[0];
 
   return useMemo(() => {

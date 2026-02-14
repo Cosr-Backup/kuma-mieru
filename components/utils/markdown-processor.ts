@@ -112,4 +112,3 @@ export async function processMarkdown(content: string): Promise<string> {
   const file = await markdownProcessor.process(content);
   return String(file).trim();
 }
-

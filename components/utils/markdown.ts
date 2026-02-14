@@ -48,7 +48,7 @@ export function useMarkdown(content: string): string {
     if (!content) {
       setHtml('');
     } else {
-      setHtml(previousHtml => (previousHtml || fallbackHtml));
+      setHtml(previousHtml => previousHtml || fallbackHtml);
 
       void renderMarkdown(content)
         .then(renderedHtml => {
@@ -90,11 +90,10 @@ export async function renderMarkdown(content: string): Promise<string> {
   }
 
   if (!markdownRenderCache.has(content)) {
-    const renderPromise = processMarkdown(content)
-      .catch(() => {
-        markdownRenderCache.delete(content);
-        return '';
-      });
+    const renderPromise = processMarkdown(content).catch(() => {
+      markdownRenderCache.delete(content);
+      return '';
+    });
 
     setMarkdownCache(content, renderPromise);
   }
