@@ -1,9 +1,7 @@
 import type { Config, PublicConfig } from '@/types/config';
 import { env } from './env';
 
-function normalizeBaseUrl(baseUrl: string) {
-  return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-}
+import { normalizeBaseUrl } from '@/utils/url';
 
 export const getConfig = (pageId?: string): Config | null => {
   const {
@@ -69,25 +67,7 @@ export const validateConfig = () => {
 };
 
 export const toPublicConfig = (config: Config): PublicConfig => {
-  const {
-    defaultPageId,
-    pageId,
-    pageIds,
-    pages,
-    siteMeta,
-    isPlaceholder,
-    isEditThisPage,
-    isShowStarButton,
-  } = config;
+  const { baseUrl: _baseUrl, htmlEndpoint: _html, apiEndpoint: _api, ...publicConfig } = config;
 
-  return {
-    defaultPageId,
-    pageId,
-    pageIds,
-    pages,
-    siteMeta,
-    isPlaceholder,
-    isEditThisPage,
-    isShowStarButton,
-  };
+  return publicConfig;
 };

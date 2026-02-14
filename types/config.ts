@@ -9,17 +9,7 @@ export interface Config extends Omit<GeneratedConfig, 'pageId' | 'siteMeta'> {
   apiEndpoint: string;
 }
 
-export interface PublicConfig extends Pick<
-  Config,
-  | 'defaultPageId'
-  | 'pageId'
-  | 'pageIds'
-  | 'pages'
-  | 'siteMeta'
-  | 'isPlaceholder'
-  | 'isEditThisPage'
-  | 'isShowStarButton'
-> {}
+export type PublicConfig = Omit<Config, 'baseUrl' | 'htmlEndpoint' | 'apiEndpoint'>;
 
 export interface SiteConfig {
   slug: string;

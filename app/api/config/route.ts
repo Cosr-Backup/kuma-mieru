@@ -3,6 +3,8 @@ import { getConfig } from '@/config/api';
 import { getGlobalConfig } from '@/services/config.server';
 import { buildIconProxyUrl } from '@/utils/icon-proxy';
 
+export const runtime = 'nodejs';
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const pageId = searchParams.get('pageId') ?? undefined;

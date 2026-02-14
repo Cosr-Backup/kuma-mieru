@@ -1,36 +1,29 @@
 import { getConfig } from '@/config/api';
-import { getPreloadData } from '@/services/config.server';
+import { getUpstreamIconUrl } from '@/services/config.server';
 import { customFetch } from '@/services/utils/fetch';
+import { normalizeBaseUrl } from '@/utils/url';
 import { NextResponse } from 'next/server';
 
-const FALLBACK_ICON = '/icon.svg';
+export const runtime = 'nodejs';
 
-function normalizeBaseUrl(baseUrl: string): string {
-  return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-}
+const FALLBACK_ICON = '/icon.svg';
+const MAX_ICON_SIZE = 2 * 1024 * 1024; // 2MB
 
 function resolveUpstreamIconUrl(icon: string, baseUrl: string): string | null {
-  const trimmedIcon = icon.trim();
-  if (!trimmedIcon) return null;
-  if (trimmedIcon === FALLBACK_ICON) return null;
-  if (trimmedIcon.startsWith('data:')) return null;
+  if (!icon || icon === FALLBACK_ICON || icon.startsWith('data:')) return null;
 
   const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
   const baseOrigin = new URL(normalizedBaseUrl).origin;
 
-  if (/^https?:\/\//i.test(trimmedIcon)) {
-    const parsed = new URL(trimmedIcon);
-    if (parsed.origin !== baseOrigin) {
-      return null;
-    }
+  if (/^https?:\/\//i.test(icon)) {
+    const parsed = new URL(icon);
+    if (parsed.origin !== baseOrigin) return null;
     return parsed.toString();
   }
 
-  if (trimmedIcon.startsWith('//')) {
-    return null;
-  }
+  if (icon.startsWith('//')) return null;
 
-  return `${normalizedBaseUrl}/${trimmedIcon.replace(/^\/+/, '')}`;
+  return `${normalizedBaseUrl}/${icon.replace(/^\/+/, '')}`;
 }
 
 function fallback(request: Request): NextResponse {
@@ -47,9 +40,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    const preloadData = await getPreloadData(pageConfig);
-    const icon = preloadData.config?.icon;
-    if (typeof icon !== 'string') {
+    const icon = await getUpstreamIconUrl(pageConfig);
+    if (!icon) {
       return fallback(request);
     }
 
@@ -59,9 +51,7 @@ export async function GET(request: Request) {
     }
 
     const upstreamResponse = await customFetch(targetUrl, {
-      headers: {
-        Accept: 'image/*,*/*;q=0.8',
-      },
+      headers: { Accept: 'image/*,*/*;q=0.8' },
       timeout: 10000,
     });
 
@@ -74,7 +64,15 @@ export async function GET(request: Request) {
       return fallback(request);
     }
 
+    const contentLength = Number(upstreamResponse.headers['content-length'] || '0');
+    if (contentLength > MAX_ICON_SIZE) {
+      return fallback(request);
+    }
+
     const data = await upstreamResponse.arrayBuffer();
+    if (data.byteLength > MAX_ICON_SIZE) {
+      return fallback(request);
+    }
 
     return new NextResponse(data, {
       status: 200,

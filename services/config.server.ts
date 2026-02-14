@@ -228,6 +228,17 @@ export const getGlobalConfig = cache(async (pageId?: string): Promise<GlobalConf
   }
 });
 
+export const getUpstreamIconUrl = cache(async (config: Config): Promise<string | null> => {
+  try {
+    const preloadData = await getPreloadData(config);
+    const icon = preloadData.config?.icon;
+
+    return typeof icon === 'string' && icon.trim().length > 0 ? icon.trim() : null;
+  } catch {
+    return null;
+  }
+});
+
 export async function getPreloadData(config: Config) {
   try {
     const htmlResponse = await customFetch(config.htmlEndpoint, customFetchOptions);
