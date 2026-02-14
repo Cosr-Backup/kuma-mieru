@@ -111,4 +111,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
 # 使用 dumb-init 作为 PID 1，正确处理信号
 # 使用 tsx 运行 TypeScript 启动脚本，使用 Node.js 运行 standalone 服务器
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-CMD ["sh", "-c", "tsx scripts/generate-config.ts && tsx scripts/generate-image-domains.ts && tsx scripts/banner.ts && tsx scripts/docker-init.ts && exec node server.js"]
+CMD ["sh", "-c", "tsx scripts/generate-config.ts && tsx scripts/generate-image-domains.ts && tsx scripts/banner.ts && exec node server.js"]

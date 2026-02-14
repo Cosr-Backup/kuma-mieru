@@ -4,30 +4,47 @@ import type { Metadata, Viewport } from 'next';
 
 import Analytics from '@/components/basic/google-analytics';
 import { fontMono, fontSans } from '@/config/fonts';
-import { siteConfig } from '@/config/site';
+import { getConfig } from '@/config/api';
 import packageJson from '@/package.json';
 import { getGlobalConfig } from '@/services/config.server';
+import { buildIconProxyUrl } from '@/utils/icon-proxy';
 import { getLocale, getMessages } from 'next-intl/server';
 import { Providers } from './providers';
 
 import { Toaster } from 'sonner';
 
-export const metadata: Metadata = {
-  title: {
-    default: 'Kuma Mieru',
-    template: siteConfig.name ? `%s - ${siteConfig.name}` : '%s - Kuma Mieru',
-  },
-  description: siteConfig.description || 'Kuma Mieru',
-  icons: {
-    icon: siteConfig.iconCandidates,
-  },
-  generator: `https://github.com/Alice39s/kuma-mieru v${packageJson.version}`,
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
-};
+const DEFAULT_TITLE = 'Kuma Mieru';
+const DEFAULT_DESCRIPTION = 'A beautiful and modern uptime monitoring dashboard';
+const DEFAULT_ICON = '/icon.svg';
+
+export const dynamic = 'force-dynamic';
+
+export function generateMetadata(): Metadata {
+  const config = getConfig();
+  const resolvedTitle = config?.siteMeta.title?.trim() || DEFAULT_TITLE;
+  const resolvedDescription = config?.siteMeta.description?.trim() || DEFAULT_DESCRIPTION;
+  const resolvedIcons =
+    config?.pageIds && config.pageIds.length > 0
+      ? config.pageIds.map(pageId => buildIconProxyUrl(pageId))
+      : [DEFAULT_ICON];
+
+  return {
+    title: {
+      default: resolvedTitle,
+      template: `%s - ${resolvedTitle}`,
+    },
+    description: resolvedDescription,
+    icons: {
+      icon: resolvedIcons,
+    },
+    generator: `https://github.com/Alice39s/kuma-mieru v${packageJson.version}`,
+    formatDetection: {
+      email: false,
+      address: false,
+      telephone: false,
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: [

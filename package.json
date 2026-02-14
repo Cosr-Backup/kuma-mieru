@@ -1,7 +1,7 @@
 {
   "name": "kuma-mieru",
   "description": "A 3rd-party Uptime Kuma monitoring dashboard built on Next.js 16, TypeScript and Recharts.",
-  "version": "1.6.3",
+  "version": "1.6.4",
   "author": "Alice39s",
   "license": "MPL-2.0",
   "homepage": "https://github.com/Alice39s/kuma-mieru",
@@ -14,7 +14,7 @@
   "scripts": {
     "dev": "bun run generate && bun run lint:fix && next dev --turbopack --port 3881",
     "start": "bun run generate && bun ./scripts/init-start.ts && bun .next/standalone/server.js",
-    "start:docker": "bun run generate && bun run scripts/docker-init.ts && bun ./server.js",
+    "start:docker": "bun run generate && node ./server.js",
     "build": "bun run generate && next build",
     "build:analyze": "bun run generate && ANALYZE=true next build",
     "build:cloudflare": "CF_DEPLOYMENT=true bun run generate && opennextjs-cloudflare build",
