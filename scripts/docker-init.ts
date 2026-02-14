@@ -3,7 +3,6 @@
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-// 将 JSON 转换为 JS 对象字面量格式（用于 Next.js 16）
 function jsonToJsObject(jsonStr: string): string {
   const obj = JSON.parse(jsonStr);
 
@@ -29,56 +28,113 @@ function jsonToJsObject(jsonStr: string): string {
   return stringify(obj);
 }
 
-// Docker 构建后的配置（JSON 格式）
-// 同时兼容旧结构（pages[].baseUrl 不存在）和新结构（pages[].baseUrl 存在）
-const magicStringJsonCandidates = [
-  '{"baseUrl":"https://whimsical-sopapillas-78abba.netlify.app","pageId":"demo","pageIds":["demo"],"pages":[{"id":"demo","siteMeta":{"title":"Uptime Kuma","description":"A beautiful and modern uptime monitoring dashboard","icon":"https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","iconCandidates":["https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","/icon.svg"]}}],"siteMeta":{"title":"Uptime Kuma","description":"A beautiful and modern uptime monitoring dashboard","icon":"https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","iconCandidates":["https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","/icon.svg"]},"isPlaceholder":false,"isEditThisPage":false,"isShowStarButton":true}',
-  '{"baseUrl":"https://whimsical-sopapillas-78abba.netlify.app","pageId":"demo","pageIds":["demo"],"pages":[{"id":"demo","baseUrl":"https://whimsical-sopapillas-78abba.netlify.app","siteMeta":{"title":"Uptime Kuma","description":"A beautiful and modern uptime monitoring dashboard","icon":"https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","iconCandidates":["https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","/icon.svg"]}}],"siteMeta":{"title":"Uptime Kuma","description":"A beautiful and modern uptime monitoring dashboard","icon":"https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","iconCandidates":["https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","/icon.svg"]},"isPlaceholder":false,"isEditThisPage":false,"isShowStarButton":true}',
-];
+interface TaggedPattern {
+  text: string;
+  kind: 'json' | 'js';
+}
 
-const magicStringPatterns = magicStringJsonCandidates.flatMap(json => [json, jsonToJsObject(json)]);
+/**
+ * Build placeholder config patterns from known Docker build-time env vars.
+ *
+ * The Dockerfile builds with fixed placeholder values (demo base URL, demo page ID, etc.).
+ * We construct the exact placeholder JSON that generate-config.ts would produce,
+ * then derive both JSON and JS object literal forms for matching.
+ *
+ * This is computed dynamically so schema changes (new fields, reordering) are handled
+ * automatically — no need to maintain hardcoded magic strings.
+ */
+function buildPlaceholderPatterns(): TaggedPattern[] {
+  const PLACEHOLDER_BASE_URL = 'https://whimsical-sopapillas-78abba.netlify.app';
+  const PLACEHOLDER_PAGE_ID = 'demo';
+  const PLACEHOLDER_TITLE = 'Uptime Kuma';
+  const PLACEHOLDER_DESCRIPTION = 'A beautiful and modern uptime monitoring dashboard';
+
+  const baseSiteMeta = {
+    title: PLACEHOLDER_TITLE,
+    description: PLACEHOLDER_DESCRIPTION,
+    icon: 'https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg',
+    iconCandidates: [
+      'https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg',
+      '/icon.svg',
+    ],
+  };
+
+  const configVariants = [
+    // Old schema (no pages[].baseUrl)
+    {
+      baseUrl: PLACEHOLDER_BASE_URL,
+      pageId: PLACEHOLDER_PAGE_ID,
+      pageIds: [PLACEHOLDER_PAGE_ID],
+      pages: [{ id: PLACEHOLDER_PAGE_ID, siteMeta: baseSiteMeta }],
+      siteMeta: baseSiteMeta,
+      isPlaceholder: false,
+      isEditThisPage: false,
+      isShowStarButton: true,
+    },
+    // New schema (with pages[].baseUrl)
+    {
+      baseUrl: PLACEHOLDER_BASE_URL,
+      pageId: PLACEHOLDER_PAGE_ID,
+      pageIds: [PLACEHOLDER_PAGE_ID],
+      pages: [{ id: PLACEHOLDER_PAGE_ID, baseUrl: PLACEHOLDER_BASE_URL, siteMeta: baseSiteMeta }],
+      siteMeta: baseSiteMeta,
+      isPlaceholder: false,
+      isEditThisPage: false,
+      isShowStarButton: true,
+    },
+  ];
+
+  const patterns: TaggedPattern[] = [];
+  for (const config of configVariants) {
+    const json = JSON.stringify(config);
+    patterns.push({ text: json, kind: 'json' });
+    patterns.push({ text: jsonToJsObject(json), kind: 'js' });
+  }
+
+  return patterns;
+}
 
 function safeReplace(
   content: string,
-  oldConfigPatterns: string[],
+  oldPatterns: TaggedPattern[],
   newConfigJson: string,
   newConfigJsObject: string
 ): { content: string; replaced: boolean } {
-  for (const pattern of oldConfigPatterns) {
-    if (!content.includes(pattern)) continue;
+  let result = content;
+  let replacedAny = false;
 
-    const isJson = pattern.trim().startsWith('{') && pattern.includes('"baseUrl"');
-    const replacement = isJson ? newConfigJson : newConfigJsObject;
+  for (const pattern of oldPatterns) {
+    if (!result.includes(pattern.text)) continue;
 
-    return {
-      content: content.replaceAll(pattern, replacement),
-      replaced: true,
-    };
+    const replacement = pattern.kind === 'json' ? newConfigJson : newConfigJsObject;
+    result = result.replaceAll(pattern.text, replacement);
+    replacedAny = true;
   }
 
-  return { content, replaced: false };
+  return { content: result, replaced: replacedAny };
 }
 
-function searchFiles(dir: string, searchPatterns: string[]): string[] {
+function searchFiles(dir: string, patterns: TaggedPattern[]): string[] {
   const results: string[] = [];
-  const files = readdirSync(dir);
+  const patternTexts = patterns.map(p => p.text);
 
-  for (const file of files) {
-    const fullPath = join(dir, file);
+  const entries = readdirSync(dir);
+  for (const entry of entries) {
+    const fullPath = join(dir, entry);
     const stat = statSync(fullPath);
 
     if (stat.isDirectory()) {
-      results.push(...searchFiles(fullPath, searchPatterns));
-    } else {
-      try {
-        const content = readFileSync(fullPath, 'utf-8');
-        // 检查是否包含任何搜索模式
-        if (searchPatterns.some(pattern => content.includes(pattern))) {
-          results.push(fullPath);
-        }
-      } catch (err) {
-        console.error(`[ERROR]: Cannot read file ${fullPath}:`, err);
+      results.push(...searchFiles(fullPath, patterns));
+      continue;
+    }
+
+    try {
+      const content = readFileSync(fullPath, 'utf-8');
+      if (patternTexts.some(text => content.includes(text))) {
+        results.push(fullPath);
       }
+    } catch (err) {
+      console.error(`[ERROR]: Cannot read file ${fullPath}:`, err);
     }
   }
 
@@ -92,13 +148,16 @@ async function main() {
     const newConfigJsObject = jsonToJsObject(newConfigJson);
 
     const nextDir = join(process.cwd(), '.next');
+    const placeholderPatterns = buildPlaceholderPatterns();
 
-    // 搜索包含任一格式配置的文件
-    const files = searchFiles(nextDir, magicStringPatterns);
+    console.log(`[INFO]: Searching for ${placeholderPatterns.length} placeholder patterns`);
+
+    const files = searchFiles(nextDir, placeholderPatterns);
 
     if (files.length === 0) {
-      console.log("[WARN]: Don't find any files to update");
-      return;
+      console.error('[ERROR]: No files containing placeholder config found in .next output');
+      console.error('[ERROR]: Docker runtime config replacement failed — aborting startup');
+      process.exit(1);
     }
 
     console.log(`[INFO]: Found ${files.length} files to update`);
@@ -111,7 +170,7 @@ async function main() {
         const content = readFileSync(file, 'utf-8');
         const { content: newContent, replaced } = safeReplace(
           content,
-          magicStringPatterns,
+          placeholderPatterns,
           newConfigJson,
           newConfigJsObject
         );
@@ -122,7 +181,6 @@ async function main() {
           continue;
         }
 
-        // 验证替换是否成功
         const hasNewConfig =
           newContent.includes(newConfigJsObject) || newContent.includes(newConfigJson);
 
@@ -142,6 +200,11 @@ async function main() {
     }
 
     console.log(`[INFO]: Update complete: ${updatedCount} succeeded, ${failedCount} failed`);
+
+    if (updatedCount === 0) {
+      console.error('[ERROR]: All file replacements failed — aborting startup');
+      process.exit(1);
+    }
   } catch (err) {
     console.error('[ERROR]: Error reading or writing files:', err);
     process.exit(1);

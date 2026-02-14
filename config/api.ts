@@ -78,6 +78,6 @@ export const toPublicConfig = (config: Config): PublicConfig => {
 
   return {
     ...publicConfig,
-    pages: pages.map(({ baseUrl: _pageBaseUrl, ...page }) => page),
+    pages: pages.map(({ id, siteMeta }) => ({ id, siteMeta })),
   };
 };

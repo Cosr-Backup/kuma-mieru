@@ -22,8 +22,8 @@ services:
       - KUMA_MIERU_TITLE=${KUMA_MIERU_TITLE:-${FEATURE_TITLE:-}}
       - KUMA_MIERU_DESCRIPTION=${KUMA_MIERU_DESCRIPTION:-${FEATURE_DESCRIPTION:-}}
       - KUMA_MIERU_ICON=${KUMA_MIERU_ICON:-${FEATURE_ICON:-}}
-      - ALLOW_INSECURE_TLS=${ALLOW_INSECURE_TLS:-}
-      - ALLOW_EMBEDDING=${ALLOW_EMBEDDING:-}
+      - ALLOW_INSECURE_TLS=${ALLOW_INSECURE_TLS:-false}
+      - ALLOW_EMBEDDING=${ALLOW_EMBEDDING:-false}
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:3000/api/health']
       interval: 30s
