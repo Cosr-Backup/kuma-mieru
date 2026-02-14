@@ -1,6 +1,5 @@
-'use client';
-
 import { env } from './env';
+import { buildIconProxyUrl } from '@/utils/icon-proxy';
 
 const baseConfig = {
   name: 'Kuma Mieru',
@@ -22,49 +21,39 @@ const navItems: NavItem[] = [
   },
   {
     label: 'page.edit',
-    href: `${env.config.baseUrl}/manage-status-page`,
+    href: `/api/manage-status-page?pageId=${encodeURIComponent(env.config.pageId)}`,
     external: true,
   },
 ];
 
-export const resolveIconUrl = (iconPath?: string): string => {
-  if (!iconPath) return baseConfig.icon;
-
-  if (iconPath.startsWith('http')) {
-    return iconPath;
-  }
-
-  if (iconPath === baseConfig.icon) {
-    return baseConfig.icon;
-  }
-
-  return `${env.config.baseUrl}/${iconPath.replace(/^\//, '')}`;
+export const resolveIconUrl = (pageId?: string): string => {
+  return buildIconProxyUrl(pageId ?? env.config.pageId);
 };
 
-export const resolveIconCandidates = (icons: string[]): string[] => {
+export const resolveIconCandidates = (pageIds: string[]): string[] => {
   const deduped: string[] = [];
   const seen = new Set<string>();
 
-  for (const icon of icons) {
-    const resolved = resolveIconUrl(icon);
-    if (seen.has(resolved)) continue;
-    seen.add(resolved);
-    deduped.push(resolved);
+  for (const pageId of pageIds) {
+    const resolved = resolveIconUrl(pageId);
+    if (!seen.has(resolved)) {
+      deduped.push(resolved);
+      seen.add(resolved);
+    }
   }
 
   if (deduped.length === 0) {
-    const fallback = resolveIconUrl();
-    deduped.push(fallback);
+    deduped.push(baseConfig.icon);
   }
 
   return deduped;
 };
 
 const getVisibleNavItems = (items: NavItem[]): NavItem[] => {
-  return items.filter((item) => (item.label !== 'page.edit' ? true : env.config.isEditThisPage));
+  return items.filter(item => (item.label !== 'page.edit' ? true : env.config.isEditThisPage));
 };
 
-const iconCandidates = resolveIconCandidates(env.config.siteMeta.iconCandidates);
+const iconCandidates = resolveIconCandidates(env.config.pageIds);
 
 export const siteConfig = {
   name: env.config.siteMeta.title || baseConfig.name,

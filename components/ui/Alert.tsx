@@ -2,7 +2,7 @@ import { Alert as HeroUIAlert } from '@heroui/alert';
 import { clsx } from 'clsx';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
-import { extractPlainText, useMarkdown } from '../utils/markdown';
+import { extractPlainText } from '../utils/markdown';
 
 interface AlertProps {
   title: string;
@@ -27,7 +27,6 @@ export const Alert = ({
 }: AlertProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const renderedDescription = useMarkdown(markdownDescription && description ? description : '');
   const plainTextDescription = markdownDescription
     ? extractPlainText(description || '', 150)
     : description;
@@ -74,7 +73,7 @@ export const Alert = ({
             <div
               className={clsx(
                 'grid transition-all duration-200 ease-in-out w-full',
-                isExpanded ? 'grid-rows-[1fr] opacity-100 mt-0' : 'grid-rows-[0fr] opacity-0',
+                isExpanded ? 'grid-rows-[1fr] opacity-100 mt-0' : 'grid-rows-[0fr] opacity-0'
               )}
             >
               <div className="overflow-hidden">{children}</div>

@@ -1,7 +1,7 @@
 import { PageConfigProvider } from '@/components/context/PageConfigContext';
 import { AppShell } from '@/components/layout/AppShell';
 import { MonitorDetailContent } from '@/components/monitor/MonitorDetailContent';
-import { getConfig } from '@/config/api';
+import { getConfig, toPublicConfig } from '@/config/api';
 import { getGlobalConfig, getPageTabsMetadata } from '@/services/config.server';
 import { notFound } from 'next/navigation';
 
@@ -27,7 +27,7 @@ export default async function MonitorDetailPage({
   ]);
 
   return (
-    <PageConfigProvider key={pageConfig.pageId} initialConfig={pageConfig}>
+    <PageConfigProvider key={pageConfig.pageId} initialConfig={toPublicConfig(pageConfig)}>
       <AppShell footerConfig={footerConfig} pageTabs={pageTabs}>
         <MonitorDetailContent monitorId={monitorId} />
       </AppShell>

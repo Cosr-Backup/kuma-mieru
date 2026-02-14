@@ -19,7 +19,6 @@ import { filterMonitorByStatus } from '@/utils/monitorFilters';
 import { Button, Tooltip } from '@heroui/react';
 import { LayoutGrid, LayoutList } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useTheme } from 'next-themes';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 const GLOBAL_VIEW_PREFERENCE_KEY = 'view-preference';
@@ -35,11 +34,9 @@ export function StatusPage() {
   const { monitorGroups, monitoringData, isLoading: isLoadingMonitors } = useMonitorData();
   const { searchTerm, isFiltering, clearSearch, filterStatus, searchInGroup } = useNodeSearch();
   const currentPageConfig = usePageConfig();
-  const { setTheme } = useTheme();
 
   const [isGlobalLiteView, setIsGlobalLiteView] = useState(false);
 
-  const t = useTranslations();
   const viewT = useTranslations('view');
 
   useEffect(() => {
@@ -60,7 +57,7 @@ export function StatusPage() {
   const isLoading = isLoadingMonitors || isLoadingConfig || isLoadingMaintenance;
 
   const activeMaintenances = maintenanceList.filter(
-    (m) => m.active && (m.status === 'under-maintenance' || m.status === 'scheduled'),
+    m => m.active && (m.status === 'under-maintenance' || m.status === 'scheduled')
   );
 
   const handleRefresh = async () => {
@@ -68,7 +65,7 @@ export function StatusPage() {
   };
 
   const toggleGlobalView = () => {
-    setIsGlobalLiteView((prev) => !prev);
+    setIsGlobalLiteView(prev => !prev);
   };
 
   const filteredMonitorGroups = useMemo(() => {
@@ -81,7 +78,7 @@ export function StatusPage() {
       filterMonitorByStatus(monitor, filterStatus, monitoringData.heartbeatList);
 
     return monitorGroups
-      .map((group) => {
+      .map(group => {
         const groupNameMatches =
           searchInGroup && hasSearchTerm && group.name.toLowerCase().includes(searchTermLower);
 
@@ -94,7 +91,7 @@ export function StatusPage() {
           };
         }
 
-        const filteredMonitors = group.monitorList.filter((monitor) => {
+        const filteredMonitors = group.monitorList.filter(monitor => {
           if (!statusFilter(monitor)) return false;
 
           if (!hasSearchTerm) return true;
@@ -103,9 +100,9 @@ export function StatusPage() {
             monitor.name.toLowerCase().includes(searchTermLower) ||
             monitor.url?.toLowerCase().includes(searchTermLower) ||
             monitor.tags?.some(
-              (tag) =>
+              tag =>
                 tag.name.toLowerCase().includes(searchTermLower) ||
-                tag.value?.toLowerCase().includes(searchTermLower),
+                tag.value?.toLowerCase().includes(searchTermLower)
             )
           );
         });
@@ -167,7 +164,7 @@ export function StatusPage() {
           </Tooltip>
         </div>
 
-        {activeMaintenances.map((maintenance) => (
+        {activeMaintenances.map(maintenance => (
           <MaintenanceAlert key={maintenance.id} maintenance={maintenance} />
         ))}
 

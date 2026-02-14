@@ -1,26 +1,31 @@
 services:
   kuma-mieru:
-    image: ghcr.io/alice39s/kuma-mieru:latest
+    image: ghcr.io/alice39s/kuma-mieru:1
     # 如果遇到问题，请注释上方的 image 行，取消下面的 build 行注释
     # build: .
     container_name: kuma-mieru
     restart: unless-stopped
     ports:
-      - "3883:3000"
+      - '3883:3000'
     env_file:
       - .env
     environment:
       - NODE_ENV=production
-      - UPTIME_KUMA_BASE_URL=${UPTIME_KUMA_BASE_URL}
-      - PAGE_ID=${PAGE_ID}
-      - FEATURE_EDIT_THIS_PAGE=${FEATURE_EDIT_THIS_PAGE}
-      - FEATURE_SHOW_STAR_BUTTON=${FEATURE_SHOW_STAR_BUTTON}
-      - FEATURE_TITLE=${FEATURE_TITLE}
-      - FEATURE_DESCRIPTION=${FEATURE_DESCRIPTION}
-      - FEATURE_ICON=${FEATURE_ICON}
-      - ALLOW_EMBEDDING=${ALLOW_EMBEDDING}
+      # Recommended: full status page URL(s), pipe-separated
+      - UPTIME_KUMA_URLS=${UPTIME_KUMA_URLS:-}
+      # Legacy (backward compat): used when UPTIME_KUMA_URLS is not set
+      - UPTIME_KUMA_BASE_URL=${UPTIME_KUMA_BASE_URL:-}
+      - PAGE_ID=${PAGE_ID:-}
+      # Feature flags (KUMA_MIERU_* preferred; FEATURE_* also accepted)
+      - KUMA_MIERU_EDIT_THIS_PAGE=${KUMA_MIERU_EDIT_THIS_PAGE:-${FEATURE_EDIT_THIS_PAGE:-}}
+      - KUMA_MIERU_SHOW_STAR_BUTTON=${KUMA_MIERU_SHOW_STAR_BUTTON:-${FEATURE_SHOW_STAR_BUTTON:-}}
+      - KUMA_MIERU_TITLE=${KUMA_MIERU_TITLE:-${FEATURE_TITLE:-}}
+      - KUMA_MIERU_DESCRIPTION=${KUMA_MIERU_DESCRIPTION:-${FEATURE_DESCRIPTION:-}}
+      - KUMA_MIERU_ICON=${KUMA_MIERU_ICON:-${FEATURE_ICON:-}}
+      - ALLOW_INSECURE_TLS=${ALLOW_INSECURE_TLS:-false}
+      - ALLOW_EMBEDDING=${ALLOW_EMBEDDING:-false}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/api/health']
       interval: 30s
       timeout: 3s
       retries: 3

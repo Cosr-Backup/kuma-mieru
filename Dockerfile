@@ -10,13 +10,14 @@ WORKDIR /app
 # 构建时固定的环境变量
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
+    UPTIME_KUMA_URLS= \
     UPTIME_KUMA_BASE_URL=https://whimsical-sopapillas-78abba.netlify.app \
     PAGE_ID=demo \
-    FEATURE_EDIT_THIS_PAGE=false \
-    FEATURE_SHOW_STAR_BUTTON=true \
-    FEATURE_TITLE="Uptime Kuma" \
-    FEATURE_DESCRIPTION="A beautiful and modern uptime monitoring dashboard" \
-    FEATURE_ICON="" \
+    KUMA_MIERU_EDIT_THIS_PAGE=false \
+    KUMA_MIERU_SHOW_STAR_BUTTON=true \
+    KUMA_MIERU_TITLE="Uptime Kuma" \
+    KUMA_MIERU_DESCRIPTION="A beautiful and modern uptime monitoring dashboard" \
+    KUMA_MIERU_ICON="" \
     ALLOW_EMBEDDING=false
 
 # 复制依赖文件
@@ -51,13 +52,14 @@ ARG PORT=3000
 ARG HOSTNAME="0.0.0.0"
 ARG NODE_ENV=production
 ARG NEXT_TELEMETRY_DISABLED=1
+ARG UPTIME_KUMA_URLS=
 ARG UPTIME_KUMA_BASE_URL=https://whimsical-sopapillas-78abba.netlify.app
 ARG PAGE_ID=demo
-ARG FEATURE_EDIT_THIS_PAGE=false
-ARG FEATURE_SHOW_STAR_BUTTON=true
-ARG FEATURE_TITLE="Uptime Kuma"
-ARG FEATURE_DESCRIPTION="A beautiful and modern uptime monitoring dashboard"
-ARG FEATURE_ICON=
+ARG KUMA_MIERU_EDIT_THIS_PAGE=false
+ARG KUMA_MIERU_SHOW_STAR_BUTTON=true
+ARG KUMA_MIERU_TITLE="Uptime Kuma"
+ARG KUMA_MIERU_DESCRIPTION="A beautiful and modern uptime monitoring dashboard"
+ARG KUMA_MIERU_ICON=
 ARG ALLOW_EMBEDDING=false
 ARG IS_DOCKER=true
 
@@ -65,13 +67,14 @@ ENV PORT=${PORT} \
     HOSTNAME=${HOSTNAME} \
     NODE_ENV=${NODE_ENV} \
     NEXT_TELEMETRY_DISABLED=${NEXT_TELEMETRY_DISABLED} \
+    UPTIME_KUMA_URLS=${UPTIME_KUMA_URLS} \
     UPTIME_KUMA_BASE_URL=${UPTIME_KUMA_BASE_URL} \
     PAGE_ID=${PAGE_ID} \
-    FEATURE_EDIT_THIS_PAGE=${FEATURE_EDIT_THIS_PAGE} \
-    FEATURE_SHOW_STAR_BUTTON=${FEATURE_SHOW_STAR_BUTTON} \
-    FEATURE_TITLE=${FEATURE_TITLE} \
-    FEATURE_DESCRIPTION=${FEATURE_DESCRIPTION} \
-    FEATURE_ICON=${FEATURE_ICON} \
+    KUMA_MIERU_EDIT_THIS_PAGE=${KUMA_MIERU_EDIT_THIS_PAGE} \
+    KUMA_MIERU_SHOW_STAR_BUTTON=${KUMA_MIERU_SHOW_STAR_BUTTON} \
+    KUMA_MIERU_TITLE=${KUMA_MIERU_TITLE} \
+    KUMA_MIERU_DESCRIPTION=${KUMA_MIERU_DESCRIPTION} \
+    KUMA_MIERU_ICON=${KUMA_MIERU_ICON} \
     ALLOW_EMBEDDING=${ALLOW_EMBEDDING} \
     IS_DOCKER=${IS_DOCKER} \
     PATH="$PATH:/app/node_modules/.bin"
@@ -86,10 +89,10 @@ RUN apk add --no-cache curl dumb-init && \
 USER nextjs
 
 # 创建最小化的 package.json 只包含运行时依赖
-# 包括 serverExternalPackages 声明的包：sharp, cheerio, markdown-it, sanitize-html
+# 包括 serverExternalPackages 声明的包：sharp, cheerio
 # 以及 generate 脚本需要的：zod, json5, dotenv, chalk
 # tsx 用于运行 TypeScript 启动脚本（替代 Bun，避免 AVX2 指令集兼容性问题）
-RUN npm install --prefer-online --omit=dev sharp cheerio markdown-it sanitize-html zod json5 dotenv chalk tsx
+RUN npm install --prefer-online --omit=dev sharp cheerio zod json5 dotenv chalk tsx
 
 # 从 builder 复制构建产物（standalone 输出）
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone/ ./

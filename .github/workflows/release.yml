@@ -3,8 +3,8 @@ name: Create Release
 on:
   push:
     paths:
-      - "package.json"
-      - ".github/workflows/release.yml"
+      - 'package.json'
+      - '.github/workflows/release.yml'
     branches:
       - main
 
@@ -117,16 +117,16 @@ jobs:
             docker stop kuma-mieru
             docker rm kuma-mieru
 
-            # 重新构建镜像
-            docker build --no-cache --t kuma-mieru .
+            # 拉取 v1 主版本通道镜像
+            docker pull ghcr.io/${{ env.REPO_NAME }}:1
 
             # 启动容器
             docker run -d \
               --name kuma-mieru \
               -p 3883:3000 \
-              -e UPTIME_KUMA_BASE_URL=your_uptime_kuma_url \
-              -e PAGE_ID=your_page_id \
-              kuma-mieru
+              -e UPTIME_KUMA_URLS=https://your_uptime_kuma_url/status/your_page_id \
+              -e KUMA_MIERU_TITLE="My Status Page" \
+              ghcr.io/${{ env.REPO_NAME }}:1
             ```
 
             ### Docker Compose
@@ -135,8 +135,9 @@ jobs:
             # 拉取最新代码
             git pull
 
-            # 重新构建镜像并启动容器
-            docker-compose up -d --build
+            # 更新镜像并启动容器
+            docker compose pull
+            docker compose up -d
             ```
           draft: false
           prerelease: false

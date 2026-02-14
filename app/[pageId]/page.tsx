@@ -1,7 +1,7 @@
 import { PageConfigProvider } from '@/components/context/PageConfigContext';
 import { AppShell } from '@/components/layout/AppShell';
 import { StatusPage } from '@/components/status/StatusPage';
-import { getAvailablePageIds, getConfig } from '@/config/api';
+import { getAvailablePageIds, getConfig, toPublicConfig } from '@/config/api';
 import { getGlobalConfig, getPageTabsMetadata } from '@/services/config.server';
 import { notFound } from 'next/navigation';
 
@@ -13,8 +13,8 @@ export async function generateStaticParams() {
   }
 
   return getAvailablePageIds()
-    .filter((pageId) => pageId !== defaultConfig.defaultPageId)
-    .map((pageId) => ({ pageId }));
+    .filter(pageId => pageId !== defaultConfig.defaultPageId)
+    .map(pageId => ({ pageId }));
 }
 
 export default async function StatusPageRoute({
@@ -35,7 +35,7 @@ export default async function StatusPageRoute({
   ]);
 
   return (
-    <PageConfigProvider key={pageConfig.pageId} initialConfig={pageConfig}>
+    <PageConfigProvider key={pageConfig.pageId} initialConfig={toPublicConfig(pageConfig)}>
       <AppShell footerConfig={footerConfig} pageTabs={pageTabs}>
         <StatusPage />
       </AppShell>

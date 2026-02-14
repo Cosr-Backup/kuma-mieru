@@ -1,13 +1,13 @@
 'use client';
 
-import type { Config } from '@/types/config';
+import type { PublicConfig } from '@/types/config';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useMemo } from 'react';
 
-const PageConfigContext = createContext<Config | null>(null);
+const PageConfigContext = createContext<PublicConfig | null>(null);
 
 interface PageConfigProviderProps {
-  initialConfig: Config;
+  initialConfig: PublicConfig;
   children: ReactNode;
 }
 
@@ -17,7 +17,7 @@ export function PageConfigProvider({ initialConfig, children }: PageConfigProvid
   return <PageConfigContext.Provider value={value}>{children}</PageConfigContext.Provider>;
 }
 
-export function usePageConfig(): Config {
+export function usePageConfig(): PublicConfig {
   const config = useContext(PageConfigContext);
 
   if (!config) {

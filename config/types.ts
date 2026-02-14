@@ -1,5 +1,6 @@
 export interface GeneratedPageConfig {
   id: string;
+  baseUrl: string;
   siteMeta: {
     title: string;
     description: string;
@@ -9,6 +10,7 @@ export interface GeneratedPageConfig {
 }
 
 export interface GeneratedConfig {
+  /** Default base URL (first page's base URL). Used as fallback when a page has no explicit baseUrl. */
   baseUrl: string;
   pageId: string;
   pageIds: string[];

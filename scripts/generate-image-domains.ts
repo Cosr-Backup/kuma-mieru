@@ -1,5 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { getString } from './lib/env';
+import { parseStatusPageUrl } from './lib/uptime-kuma';
 
 type ImageProtocol = 'http' | 'https';
 
@@ -41,7 +43,7 @@ const parseUrl = (url: string | null): { hostname: string; protocol: ImageProtoc
 
 const addDomainToMap = (
   map: Map<string, Set<ImageProtocol>>,
-  value: { hostname: string; protocol: ImageProtocol } | null,
+  value: { hostname: string; protocol: ImageProtocol } | null
 ) => {
   if (!value) return;
 
@@ -50,24 +52,41 @@ const addDomainToMap = (
   map.set(value.hostname, protocols);
 };
 
+const parseBaseUrlsFromEnv = (): string[] => {
+  const rawUrls = process.env.UPTIME_KUMA_URLS?.trim();
+  if (!rawUrls) return [];
+
+  return rawUrls
+    .split('|')
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map(url => parseStatusPageUrl(url).baseUrl);
+};
+
 const generateImageDomains = (): void => {
   const domainsMap = new Map<string, Set<ImageProtocol>>();
 
+  for (const baseUrl of parseBaseUrlsFromEnv()) {
+    addDomainToMap(domainsMap, parseUrl(baseUrl));
+  }
+
   addDomainToMap(domainsMap, parseUrl(process.env.UPTIME_KUMA_BASE_URL || ''));
-  addDomainToMap(domainsMap, parseUrl(process.env.FEATURE_ICON || ''));
+
+  const iconEnv = getString('KUMA_MIERU_ICON');
+  addDomainToMap(domainsMap, parseUrl(iconEnv.value ?? ''));
 
   const patterns: ImageDomainPattern[] = Array.from(domainsMap.entries()).map(
     ([hostname, protocols]) => ({
       hostname,
       protocols: Array.from(protocols).sort(),
-    }),
+    })
   );
 
   if (patterns.length === 0) {
     patterns.push({ hostname: '*', protocols: [...supportedProtocols] });
   }
 
-  const legacyDomains = patterns.map((pattern) => pattern.hostname);
+  const legacyDomains = patterns.map(pattern => pattern.hostname);
 
   const domainsConfig: ImageDomainsConfig = {
     timestamp: new Date().toISOString(),

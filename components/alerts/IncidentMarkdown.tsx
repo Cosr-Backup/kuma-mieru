@@ -1,19 +1,13 @@
-import { Alert } from '@/components/ui/Alert';
+'use client';
+
+import { ExpandableAlert } from '@/components/alerts/ExpandableAlert';
 import type { Incident } from '@/types/monitor';
+import { CircleAlert, Info, TriangleAlert } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import type { DateTimeFormatOptions } from 'next-intl';
-import React, { useMemo } from 'react';
-import { dateStringToTimestamp, extractSentence, timezoneOffsetToMs } from '../utils/format';
-
-// Workaround for https://github.com/markdown-it/markdown-it/issues/1082
-const MarkdownIt = require('markdown-it');
-const md = MarkdownIt({
-  html: true,
-  linkify: true,
-  breaks: true,
-  typographer: true,
-  listIndent: true,
-});
+import { useMemo } from 'react';
+import { dateStringToTimestamp, timezoneOffsetToMs } from '../utils/format';
+import { extractPlainText, getMarkdownClasses, useMarkdown } from '../utils/markdown';
 
 function IncidentMarkdownAlert({ incident }: { incident: Incident }) {
   const t = useTranslations('alert');
@@ -47,50 +41,53 @@ function IncidentMarkdownAlert({ incident }: { incident: Incident }) {
     }
   }, [style]);
 
-  const htmlContent = useMemo(() => {
-    return md.render(content);
-  }, [content]);
+  const AlertIcon = useMemo(() => {
+    switch (style) {
+      case 'warning':
+        return TriangleAlert;
+      case 'danger':
+        return CircleAlert;
+      default:
+        return Info;
+    }
+  }, [style]);
+
+  const htmlContent = useMarkdown(content);
 
   return (
-    <Alert
+    <ExpandableAlert
       title={title}
-      description={extractSentence(content)}
+      preview={extractPlainText(content, 150)}
       color={alertColor}
-      variant="flat"
       className="mb-8"
+      icon={<AlertIcon className="h-4 w-4" />}
     >
-      <div
-        className="prose prose-sm dark:prose-invert w-full [&>:first-child]:mt-0 [&>:last-child]:mb-0
-          prose-p:text-gray-600 dark:prose-p:text-gray-300
-          prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline
-          prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded
-          prose-pre:bg-gray-100 dark:prose-pre:bg-gray-800 prose-pre:p-3
-          prose-ul:list-disc prose-ul:pl-5 prose-ol:list-decimal prose-ol:pl-5
-          prose-li:text-gray-600 dark:prose-li:text-gray-300
-          prose-headings:text-gray-800 dark:prose-headings:text-gray-100
-          prose-code:text-gray-800 dark:prose-code:text-gray-100
-          prose-code:font-mono prose-code:text-sm"
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: 相信 markdown-it 的安全性
-        dangerouslySetInnerHTML={{ __html: htmlContent }}
-      />
-      <div className="flex flex-col items-end gap-1 mt-4">
-        {lastUpdatedDate && (
-          <span className="text-sm text-gray-400 dark:text-gray-500">
-            {t('updatedAt', {
-              time: format.relativeTime(dateStringToTimestamp(lastUpdatedDate), now),
+      <div className="space-y-4">
+        <div
+          className={getMarkdownClasses()}
+          // oxlint-disable-next-line react/no-danger -- 内容已通过 rehype-sanitize 白名单净化
+          dangerouslySetInnerHTML={{ __html: htmlContent }}
+        />
+
+        <div className="flex flex-col items-end gap-1 border-t border-gray-200/80 pt-3 dark:border-gray-700/70">
+          {lastUpdatedDate ? (
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {t('updatedAt', {
+                time: format.relativeTime(dateStringToTimestamp(lastUpdatedDate), now),
+              })}
+            </span>
+          ) : null}
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {t('createdAt', {
+              time: format.dateTime(
+                dateStringToTimestamp(createdDate) + timezoneOffsetToMs('+00:00'),
+                dateTimeFormat
+              ),
             })}
           </span>
-        )}
-        <span className="text-sm text-gray-400 dark:text-gray-500">
-          {t('createdAt', {
-            time: format.dateTime(
-              dateStringToTimestamp(createdDate) + timezoneOffsetToMs('+00:00'),
-              dateTimeFormat,
-            ),
-          })}
-        </span>
+        </div>
       </div>
-    </Alert>
+    </ExpandableAlert>
   );
 }
 

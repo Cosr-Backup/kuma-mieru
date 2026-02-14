@@ -55,7 +55,6 @@ Please be respectful and considerate of others when contributing to this project
    ```
 
    Follow the conventional commit format:
-
    - `feat`: A new feature
    - `fix`: A bug fix
    - `docs`: Documentation changes

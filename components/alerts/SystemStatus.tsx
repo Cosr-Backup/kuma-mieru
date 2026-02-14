@@ -4,7 +4,7 @@ import { cn } from '@heroui/react';
 import { AlertTriangle, CheckCircle, Clock, type LucideIcon, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { useConfig, useMonitorData } from '../utils/swr';
+import { useMonitorData } from '../utils/swr';
 
 const pingAnimation = {
   animation: 'slowPing 3s cubic-bezier(0,0,0.2,1) infinite',
@@ -13,9 +13,8 @@ const pingAnimation = {
 export function SystemStatusAlert() {
   const t = useTranslations('status');
   const { monitoringData, monitorGroups, isLoading: isLoadingMonitors } = useMonitorData();
-  const { config, isLoading: isLoadingConfig } = useConfig();
 
-  const isLoading = isLoadingMonitors || isLoadingConfig;
+  const isLoading = isLoadingMonitors;
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
@@ -33,15 +32,15 @@ export function SystemStatusAlert() {
   const totalMonitors = monitorGroups.reduce((sum, group) => sum + group.monitorList.length, 0);
 
   const onlineMonitors = Object.entries(monitoringData?.heartbeatList || {}).filter(
-    ([_, heartbeats]) => heartbeats.length > 0 && heartbeats[0].status === 1,
+    ([_, heartbeats]) => heartbeats.length > 0 && heartbeats[0].status === 1
   ).length;
 
   const offlineMonitors = Object.entries(monitoringData?.heartbeatList || {}).filter(
-    ([_, heartbeats]) => heartbeats.length > 0 && heartbeats[0].status === 0,
+    ([_, heartbeats]) => heartbeats.length > 0 && heartbeats[0].status === 0
   ).length;
 
   const maintenanceMonitors = Object.entries(monitoringData?.heartbeatList || {}).filter(
-    ([_, heartbeats]) => heartbeats.length > 0 && heartbeats[0].status === 2,
+    ([_, heartbeats]) => heartbeats.length > 0 && heartbeats[0].status === 2
   ).length;
 
   let systemStatus = 'normal';

@@ -2,7 +2,7 @@ import http from 'node:http';
 import type { OutgoingHttpHeaders } from 'node:http';
 import https from 'node:https';
 import { URL } from 'node:url';
-import { customFetchOptions } from './common';
+import { allowInsecureTls, customFetchOptions } from './common';
 
 interface CustomResponse {
   ok: boolean;
@@ -11,6 +11,7 @@ interface CustomResponse {
   headers: Record<string, string>;
   text: () => Promise<string>;
   json: () => Promise<unknown>;
+  arrayBuffer: () => Promise<ArrayBuffer>;
 }
 
 interface NodeError extends Error {
@@ -29,14 +30,16 @@ const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
   timeout: 10000,
 };
 
+let hasShownInsecureTlsWarning = false;
+
 function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function makeRequest(
   url: string,
   options: RequestInit & RetryOptions = {},
-  retryCount = 0,
+  retryCount = 0
 ): Promise<CustomResponse> {
   const {
     maxRetries = DEFAULT_RETRY_OPTIONS.maxRetries,
@@ -60,29 +63,44 @@ async function makeRequest(
     }
   }
 
-  const isDevelopment = process.env.NODE_ENV === 'development';
-
   return new Promise((resolve, reject) => {
+    const isHttps = parsedUrl.protocol === 'https:';
+
+    if (isHttps && allowInsecureTls && !hasShownInsecureTlsWarning) {
+      hasShownInsecureTlsWarning = true;
+      console.warn(
+        'ALLOW_INSECURE_TLS=true: TLS certificate verification is disabled for HTTPS requests.'
+      );
+    }
+
     const req = protocol.request(
       url,
       {
         method: mergedOptions.method || 'GET',
         headers,
         timeout,
-        rejectUnauthorized: isDevelopment,
-        minVersion: 'TLSv1.2',
-        maxVersion: 'TLSv1.3',
-        ciphers: 'HIGH:!aNULL:!MD5',
+        ...(isHttps
+          ? {
+              rejectUnauthorized: !allowInsecureTls,
+              minVersion: 'TLSv1.2' as const,
+              maxVersion: 'TLSv1.3' as const,
+              ciphers: 'HIGH:!aNULL:!MD5',
+            }
+          : {}),
       },
-      (res) => {
-        let responseBody = '';
+      res => {
+        const chunks: Buffer[] = [];
 
-        res.setEncoding('utf8');
-        res.on('data', (chunk: string) => {
-          responseBody += chunk;
+        res.on('data', (chunk: Buffer | string) => {
+          if (typeof chunk === 'string') {
+            chunks.push(Buffer.from(chunk, 'utf8'));
+            return;
+          }
+          chunks.push(chunk);
         });
 
         res.on('end', () => {
+          const responseBody = Buffer.concat(chunks);
           const response: CustomResponse = {
             ok: res.statusCode ? res.statusCode >= 200 && res.statusCode < 300 : false,
             status: res.statusCode || 0,
@@ -91,15 +109,20 @@ async function makeRequest(
               Object.entries(res.headers).map(([key, value]) => [
                 key,
                 Array.isArray(value) ? value.join(', ') : value || '',
-              ]),
+              ])
             ),
-            text: async () => responseBody,
-            json: async () => JSON.parse(responseBody),
+            text: async () => responseBody.toString('utf8'),
+            json: async () => JSON.parse(responseBody.toString('utf8')),
+            arrayBuffer: async () =>
+              responseBody.buffer.slice(
+                responseBody.byteOffset,
+                responseBody.byteOffset + responseBody.byteLength
+              ),
           };
 
           resolve(response);
         });
-      },
+      }
     );
 
     req.on('error', async (error: NodeError) => {
@@ -158,7 +181,7 @@ async function makeRequest(
 
 export async function customFetch(
   url: string,
-  options: RequestInit & RetryOptions = {},
+  options: RequestInit & RetryOptions = {}
 ): Promise<CustomResponse> {
   return makeRequest(url, options);
 }

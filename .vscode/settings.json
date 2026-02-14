@@ -1,18 +1,17 @@
 {
   "typescript.tsdk": "node_modules/typescript/lib",
-  "i18n-ally.localesPaths": [
-    "messages",
-    "utils/i18n"
-  ],
+  "i18n-ally.localesPaths": ["messages", "utils/i18n"],
   "i18n-ally.sourceLanguage": "zh-CN",
   "i18n-ally.keystyle": "nested",
+  "oxc.fmt.configPath": ".oxfmtrc.json",
   "editor.formatOnSave": true,
-  "editor.defaultFormatter": "biomejs.biome",
+  "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit"
   },
+  "eslint.enable": false,
   "[typescriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   }
 }

@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import generatedConfig from './generated-config.json';
-import type { GeneratedConfig } from './types';
 
 // 验证生成的配置
 const siteMetaSchema = z.object({
@@ -17,8 +16,9 @@ const configSchema = z.object({
   pages: z.array(
     z.object({
       id: z.string(),
+      baseUrl: z.string().url(),
       siteMeta: siteMetaSchema,
-    }),
+    })
   ),
   siteMeta: siteMetaSchema,
   isPlaceholder: z.boolean(),
@@ -34,6 +34,10 @@ const runtimeEnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
 
+const runtimeEnv = runtimeEnvSchema.parse({
+  NODE_ENV: process.env.NODE_ENV,
+});
+
 // 完整环境配置
 export const env = {
   // 从配置文件获取的数据
@@ -42,9 +46,7 @@ export const env = {
   },
 
   // 运行时环境变量
-  runtime: {
-    NODE_ENV: process.env.NODE_ENV || 'development',
-  },
+  runtime: runtimeEnv,
 };
 
 // 导出类型
