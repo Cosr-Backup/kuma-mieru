@@ -48,6 +48,7 @@ Kuma Mieru 是一款基于 Next.js 16、TypeScript 和 Recharts 构建的第三�
     - [1. 获取容器镜像](#1-获取容器镜像)
     - [2. 修改环境变量](#2-修改环境变量)
     - [3. 启动容器服务](#3-启动容器服务)
+- [版本策略](#版本策略)
 - [环境变量配置](#环境变量配置)
 - [与 Uptime Kuma 集成 :link:](#与-uptime-kuma-集成-link)
 - [FAQ :question:](#faq-question)
@@ -104,7 +105,7 @@ Fork 本仓库到您的 GitHub 用户下，如图所示：
 
 ![部署到 Vercel](./docs/vercel-deploy.png)
 
-2. 点击 `Deploy` 按钮即可一键部署到 Vercel
+1. 点击 `Deploy` 按钮即可一键部署到 Vercel
 
 #### 4. 更新仓库
 
@@ -223,10 +224,10 @@ Fork 本仓库到您的 GitHub 用户下，如图所示：
 
 #### 1. 获取容器镜像
 
-**从源码构建镜像**
+##### 从 GHCR 拉取镜像（推荐）
 
 ```bash
-docker build -t kuma-mieru .
+docker pull ghcr.io/alice39s/kuma-mieru:1
 ```
 
 #### 2. 修改环境变量
@@ -241,7 +242,7 @@ cp .env.example .env
 
 #### 3. 启动容器服务
 
-**使用源码构建镜像**
+##### 使用 GHCR 镜像启动
 
 ```bash
 docker run -d \
@@ -249,8 +250,17 @@ docker run -d \
   -p 3883:3000 \
   -e UPTIME_KUMA_BASE_URL="..." \
   -e PAGE_ID="..." \
-  kuma-mieru
+  ghcr.io/alice39s/kuma-mieru:1
 ```
+
+## 版本策略
+
+> [!WARNING]
+> Docker 镜像推荐使用 `ghcr.io/alice39s/kuma-mieru:1`（主版本通道）。
+>
+> `v1` 主版本内将尽可能保持向前兼容；`v2` 将是包含重大 Breaking Changes 的版本。
+>
+> 不推荐固定到次版本/补丁版本（例如 `:1.6` 或 `:1.6.2`），除非您有明确的灰度与回滚策略。
 
 ## 环境变量配置
 
@@ -258,16 +268,16 @@ docker run -d \
 
 那么您需要配置的环境变量如下：
 
-| 变量名                   | 必填 | 说明                           | 示例/默认值                                        |
-| ------------------------ | ---- | ------------------------------ | -------------------------------------------------- |
-| UPTIME_KUMA_BASE_URL     | Yes  | Uptime Kuma 实例的基础 URL     | <https://example.kuma-mieru.invalid>                 |
-| PAGE_ID                  | Yes  | Uptime Kuma 实例的状态页面 ID，支持使用逗号分隔多个页面，首个值为默认页面 | default,status-asia |
-| FEATURE_EDIT_THIS_PAGE   | No   | 是否展示 "Edit This Page" 按钮 | false                                              |
-| FEATURE_SHOW_STAR_BUTTON | No   | 是否展示 "Star on Github" 按钮 | true                                               |
-| FEATURE_TITLE            | No   | 自定义页面标题                 | Kuma Mieru                                         |
-| FEATURE_DESCRIPTION      | No   | 自定义页面描述                 | A beautiful and modern uptime monitoring dashboard |
-| FEATURE_ICON             | No   | 自定义页面图标URL              | /icon.svg                                          |
-| ALLOW_EMBEDDING          | No   | 是否允许在 iframe 中嵌入       | `false` (禁止) / `true` (允许所有，不推荐) / `example.com,app.com` (白名单) |
+| 变量名                   | 必填 | 说明                                                                      | 示例/默认值                                                                 |
+| ------------------------ | ---- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| UPTIME_KUMA_BASE_URL     | Yes  | Uptime Kuma 实例的基础 URL                                                | <https://example.kuma-mieru.invalid>                                        |
+| PAGE_ID                  | Yes  | Uptime Kuma 实例的状态页面 ID，支持使用逗号分隔多个页面，首个值为默认页面 | default,status-asia                                                         |
+| FEATURE_EDIT_THIS_PAGE   | No   | 是否展示 "Edit This Page" 按钮                                            | false                                                                       |
+| FEATURE_SHOW_STAR_BUTTON | No   | 是否展示 "Star on Github" 按钮                                            | true                                                                        |
+| FEATURE_TITLE            | No   | 自定义页面标题                                                            | Kuma Mieru                                                                  |
+| FEATURE_DESCRIPTION      | No   | 自定义页面描述                                                            | A beautiful and modern uptime monitoring dashboard                          |
+| FEATURE_ICON             | No   | 自定义页面图标URL                                                         | /icon.svg                                                                   |
+| ALLOW_EMBEDDING          | No   | 是否允许在 iframe 中嵌入                                                  | `false` (禁止) / `true` (允许所有，不推荐) / `example.com,app.com` (白名单) |
 
 ## 与 Uptime Kuma 集成 :link:
 
