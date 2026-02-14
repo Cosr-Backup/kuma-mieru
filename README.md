@@ -31,7 +31,7 @@ Kuma Mieru 是一款基于 Next.js 16、TypeScript 和 Recharts 构建的第三�
 
 ## 目录
 
-- [Kuma Mieru :traffic\_light:](#kuma-mieru-traffic_light)
+- [Kuma Mieru :traffic_light:](#kuma-mieru-traffic_light)
   - [目录](#目录)
   - [功能亮点 :sparkles:](#功能亮点-sparkles)
   - [测试截图 :camera:](#测试截图-camera)
