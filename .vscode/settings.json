@@ -1,6 +1,9 @@
 {
   "typescript.tsdk": "node_modules/typescript/lib",
-  "i18n-ally.localesPaths": ["messages", "utils/i18n"],
+  "i18n-ally.localesPaths": [
+    "messages",
+    "utils/i18n"
+  ],
   "i18n-ally.sourceLanguage": "zh-CN",
   "i18n-ally.keystyle": "nested",
   "editor.formatOnSave": true,
@@ -9,6 +12,7 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit"
   },
+  "eslint.enable": false,
   "[typescriptreact]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   }
