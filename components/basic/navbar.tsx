@@ -128,7 +128,7 @@ export const Navbar = () => {
       ? [
           {
             label: 'page.edit',
-            href: '/api/manage-status-page',
+            href: `/api/manage-status-page?pageId=${encodeURIComponent(pageConfig.pageId)}`,
             external: true,
           },
         ]

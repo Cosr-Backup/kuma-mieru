@@ -21,7 +21,7 @@ const navItems: NavItem[] = [
   },
   {
     label: 'page.edit',
-    href: '/api/manage-status-page',
+    href: `/api/manage-status-page?pageId=${encodeURIComponent(env.config.pageId)}`,
     external: true,
   },
 ];

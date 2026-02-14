@@ -283,7 +283,7 @@ docker run -d \
 
 | 变量名                      | 必填  | 说明                                                                            | 示例/默认值                                                                                              |
 | --------------------------- | ----- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| UPTIME_KUMA_URLS            | Yes\* | 推荐。完整状态页 URL，支持使用 `\|` 分隔多个 URL                                | <https://example.kuma-mieru.invalid/status/default\|https://example.kuma-mieru.invalid/status/secondary> |
+| UPTIME_KUMA_URLS            | Yes\* | 推荐。完整状态页 URL，支持使用 `\|` 分隔多个 URL（可来自不同 Kuma 实例）        | <https://example.kuma-mieru.invalid/status/default\|https://example.kuma-mieru.invalid/status/secondary> |
 | UPTIME_KUMA_BASE_URL        | Yes\* | 兼容旧版。Uptime Kuma 实例基础 URL（当未设置 `UPTIME_KUMA_URLS` 时启用）        | <https://example.kuma-mieru.invalid>                                                                     |
 | PAGE_ID                     | Yes\* | 兼容旧版。状态页 ID，支持逗号分隔多个页面（当未设置 `UPTIME_KUMA_URLS` 时启用） | default,status-asia                                                                                      |
 | KUMA_MIERU_EDIT_THIS_PAGE   | No    | 是否展示 "Edit This Page" 按钮（新变量名）                                      | false                                                                                                    |

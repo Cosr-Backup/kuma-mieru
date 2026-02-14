@@ -44,6 +44,7 @@ export function parseStatusPageUrl(rawUrl: string): { baseUrl: string; pageId: s
 interface EndpointConfig {
   baseUrl: string;
   pageIds: string[];
+  pageEndpoints: Array<{ id: string; baseUrl: string }>;
   source: 'UPTIME_KUMA_URLS' | 'UPTIME_KUMA_BASE_URL+PAGE_ID';
 }
 
@@ -75,23 +76,39 @@ export function resolveEndpointConfig(): EndpointConfig {
     }
 
     const parsed = urls.map(parseStatusPageUrl);
-    const baseUrl = parsed[0]!.baseUrl;
+    const pageEndpoints: Array<{ id: string; baseUrl: string }> = [];
+    const seenPageBase = new Map<string, string>();
 
-    const mismatch = parsed.find(p => p.baseUrl !== baseUrl);
-    if (mismatch) {
-      throw new Error(
-        `All URLs in UPTIME_KUMA_URLS must share the same base URL. ` +
-          `Expected ${baseUrl}, got ${mismatch.baseUrl}`
-      );
+    for (const item of parsed) {
+      const seenBaseUrl = seenPageBase.get(item.pageId);
+
+      if (!seenBaseUrl) {
+        seenPageBase.set(item.pageId, item.baseUrl);
+        pageEndpoints.push({ id: item.pageId, baseUrl: item.baseUrl });
+        continue;
+      }
+
+      if (seenBaseUrl !== item.baseUrl) {
+        throw new Error(
+          `Duplicate page id "${item.pageId}" appears under multiple base URLs in ` +
+            `UPTIME_KUMA_URLS: ${seenBaseUrl} and ${item.baseUrl}. ` +
+            'Please ensure each page id is globally unique.'
+        );
+      }
     }
 
-    const pageIds = Array.from(new Set(parsed.map(p => p.pageId)));
+    const baseUrl = pageEndpoints[0]?.baseUrl;
+    if (!baseUrl) {
+      throw new Error('UPTIME_KUMA_URLS must contain at least one valid status page URL');
+    }
+
+    const pageIds = pageEndpoints.map(item => item.id);
 
     if (process.env.UPTIME_KUMA_BASE_URL || process.env.PAGE_ID) {
       console.log('[env] UPTIME_KUMA_URLS is set — UPTIME_KUMA_BASE_URL and PAGE_ID are ignored');
     }
 
-    return { baseUrl, pageIds, source: 'UPTIME_KUMA_URLS' };
+    return { baseUrl, pageIds, pageEndpoints, source: 'UPTIME_KUMA_URLS' };
   }
 
   const baseUrl = process.env.UPTIME_KUMA_BASE_URL;
@@ -108,6 +125,7 @@ export function resolveEndpointConfig(): EndpointConfig {
   return {
     baseUrl: normalizeBaseUrl(baseUrl),
     pageIds,
+    pageEndpoints: pageIds.map(id => ({ id, baseUrl: normalizeBaseUrl(baseUrl) })),
     source: 'UPTIME_KUMA_BASE_URL+PAGE_ID',
   };
 }

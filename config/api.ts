@@ -26,11 +26,12 @@ export const getConfig = (pageId?: string): Config | null => {
     return null;
   }
 
-  const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
-  const resolvedSiteMeta = pages.find(page => page.id === resolvedPageId)?.siteMeta ?? siteMeta;
+  const resolvedPage = pages.find(page => page.id === resolvedPageId);
+  const resolvedBaseUrl = normalizeBaseUrl(resolvedPage?.baseUrl ?? baseUrl);
+  const resolvedSiteMeta = resolvedPage?.siteMeta ?? siteMeta;
 
   const config: Config = {
-    baseUrl,
+    baseUrl: resolvedBaseUrl,
     defaultPageId,
     pageId: resolvedPageId,
     pageIds,
@@ -39,8 +40,8 @@ export const getConfig = (pageId?: string): Config | null => {
     isPlaceholder: env.config.isPlaceholder,
     isEditThisPage: isEditThisPage ?? false,
     isShowStarButton: isShowStarButton ?? true,
-    htmlEndpoint: `${normalizedBaseUrl}/status/${resolvedPageId}`,
-    apiEndpoint: `${normalizedBaseUrl}/api/status-page/heartbeat/${resolvedPageId}`,
+    htmlEndpoint: `${resolvedBaseUrl}/status/${resolvedPageId}`,
+    apiEndpoint: `${resolvedBaseUrl}/api/status-page/heartbeat/${resolvedPageId}`,
   };
 
   if (NODE_ENV === 'development') {
@@ -67,7 +68,16 @@ export const validateConfig = () => {
 };
 
 export const toPublicConfig = (config: Config): PublicConfig => {
-  const { baseUrl: _baseUrl, htmlEndpoint: _html, apiEndpoint: _api, ...publicConfig } = config;
+  const {
+    baseUrl: _baseUrl,
+    htmlEndpoint: _html,
+    apiEndpoint: _api,
+    pages,
+    ...publicConfig
+  } = config;
 
-  return publicConfig;
+  return {
+    ...publicConfig,
+    pages: pages.map(({ baseUrl: _pageBaseUrl, ...page }) => page),
+  };
 };

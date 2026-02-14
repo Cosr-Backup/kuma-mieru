@@ -90,6 +90,17 @@ const configGroups: ConfigGroup[] = [
         value: generatedConfig?.baseUrl || process.env.UPTIME_KUMA_BASE_URL,
       },
       {
+        name: 'RESOLVED_BASE_URLS',
+        value: generatedConfig?.pages
+          ? Array.from(
+              new Set(generatedConfig.pages.map((page: { baseUrl?: string }) => page.baseUrl))
+            )
+              .filter(Boolean)
+              .join(', ')
+          : undefined,
+        defaultValue: 'Not available',
+      },
+      {
         name: 'RESOLVED_DEFAULT_PAGE_ID',
         value: generatedConfig?.pageId || generatedConfig?.pageIds?.[0] || process.env.PAGE_ID,
       },

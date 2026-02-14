@@ -30,29 +30,30 @@ function jsonToJsObject(jsonStr: string): string {
 }
 
 // Docker 构建后的配置（JSON 格式）
-const magicStringJson =
-  '{"baseUrl":"https://whimsical-sopapillas-78abba.netlify.app","pageId":"demo","pageIds":["demo"],"pages":[{"id":"demo","siteMeta":{"title":"Uptime Kuma","description":"A beautiful and modern uptime monitoring dashboard","icon":"https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","iconCandidates":["https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","/icon.svg"]}}],"siteMeta":{"title":"Uptime Kuma","description":"A beautiful and modern uptime monitoring dashboard","icon":"https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","iconCandidates":["https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","/icon.svg"]},"isPlaceholder":false,"isEditThisPage":false,"isShowStarButton":true}';
+// 同时兼容旧结构（pages[].baseUrl 不存在）和新结构（pages[].baseUrl 存在）
+const magicStringJsonCandidates = [
+  '{"baseUrl":"https://whimsical-sopapillas-78abba.netlify.app","pageId":"demo","pageIds":["demo"],"pages":[{"id":"demo","siteMeta":{"title":"Uptime Kuma","description":"A beautiful and modern uptime monitoring dashboard","icon":"https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","iconCandidates":["https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","/icon.svg"]}}],"siteMeta":{"title":"Uptime Kuma","description":"A beautiful and modern uptime monitoring dashboard","icon":"https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","iconCandidates":["https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","/icon.svg"]},"isPlaceholder":false,"isEditThisPage":false,"isShowStarButton":true}',
+  '{"baseUrl":"https://whimsical-sopapillas-78abba.netlify.app","pageId":"demo","pageIds":["demo"],"pages":[{"id":"demo","baseUrl":"https://whimsical-sopapillas-78abba.netlify.app","siteMeta":{"title":"Uptime Kuma","description":"A beautiful and modern uptime monitoring dashboard","icon":"https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","iconCandidates":["https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","/icon.svg"]}}],"siteMeta":{"title":"Uptime Kuma","description":"A beautiful and modern uptime monitoring dashboard","icon":"https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","iconCandidates":["https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f914.svg","/icon.svg"]},"isPlaceholder":false,"isEditThisPage":false,"isShowStarButton":true}',
+];
 
-// 转换为 JS 对象字面量格式（用于 Next.js 16）
-const magicStringJsObject = jsonToJsObject(magicStringJson);
+const magicStringPatterns = magicStringJsonCandidates.flatMap(json => [json, jsonToJsObject(json)]);
 
 function safeReplace(
   content: string,
-  oldConfigJson: string,
-  oldConfigJsObject: string,
+  oldConfigPatterns: string[],
   newConfigJson: string,
   newConfigJsObject: string
 ): { content: string; replaced: boolean } {
-  // 尝试替换 JS 对象字面量格式（Next.js 16）
-  if (content.includes(oldConfigJsObject)) {
-    const result = content.replaceAll(oldConfigJsObject, newConfigJsObject);
-    return { content: result, replaced: true };
-  }
+  for (const pattern of oldConfigPatterns) {
+    if (!content.includes(pattern)) continue;
 
-  // 回退：尝试替换 JSON 格式（Next.js 15）
-  if (content.includes(oldConfigJson)) {
-    const result = content.replaceAll(oldConfigJson, newConfigJson);
-    return { content: result, replaced: true };
+    const isJson = pattern.trim().startsWith('{') && pattern.includes('"baseUrl"');
+    const replacement = isJson ? newConfigJson : newConfigJsObject;
+
+    return {
+      content: content.replaceAll(pattern, replacement),
+      replaced: true,
+    };
   }
 
   return { content, replaced: false };
@@ -93,7 +94,7 @@ async function main() {
     const nextDir = join(process.cwd(), '.next');
 
     // 搜索包含任一格式配置的文件
-    const files = searchFiles(nextDir, [magicStringJson, magicStringJsObject]);
+    const files = searchFiles(nextDir, magicStringPatterns);
 
     if (files.length === 0) {
       console.log("[WARN]: Don't find any files to update");
@@ -110,8 +111,7 @@ async function main() {
         const content = readFileSync(file, 'utf-8');
         const { content: newContent, replaced } = safeReplace(
           content,
-          magicStringJson,
-          magicStringJsObject,
+          magicStringPatterns,
           newConfigJson,
           newConfigJsObject
         );

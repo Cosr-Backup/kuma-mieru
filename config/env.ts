@@ -16,6 +16,7 @@ const configSchema = z.object({
   pages: z.array(
     z.object({
       id: z.string(),
+      baseUrl: z.string().url(),
       siteMeta: siteMetaSchema,
     })
   ),

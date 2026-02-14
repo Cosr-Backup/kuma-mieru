@@ -1,5 +1,6 @@
 export interface GeneratedPageConfig {
   id: string;
+  baseUrl: string;
   siteMeta: {
     title: string;
     description: string;

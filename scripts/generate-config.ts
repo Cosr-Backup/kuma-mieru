@@ -25,6 +25,7 @@ const DEFAULT_SITE_META = siteMetaSchema.parse({});
 
 const pageConfigSchema = z.object({
   id: z.string(),
+  baseUrl: z.string().url(),
   siteMeta: siteMetaSchema,
 });
 
@@ -223,11 +224,14 @@ async function generateConfig() {
     console.log('[env] [generate-config] [start]');
 
     const endpoint = resolveEndpointConfig();
-    const { baseUrl, pageIds } = endpoint;
+    const { baseUrl, pageIds, pageEndpoints } = endpoint;
 
     console.log(`[env] - source: ${endpoint.source}`);
     console.log(`[env] - baseUrl: ${baseUrl}`);
     console.log(`[env] - pageIds: ${pageIds.join(', ')}`);
+    console.log(
+      `[env] - pageEndpoints: ${pageEndpoints.map(p => `${p.id}@${p.baseUrl}`).join(', ')}`
+    );
 
     const defaultPageId = pageIds[0];
 
@@ -249,15 +253,27 @@ async function generateConfig() {
         (isShowStarButton.source ? ` [${isShowStarButton.source}]` : '')
     );
 
-    const pageConfigEntries = [] as Array<{ id: string; siteMeta: z.infer<typeof siteMetaSchema> }>;
+    const pageConfigEntries = [] as Array<{
+      id: string;
+      baseUrl: string;
+      siteMeta: z.infer<typeof siteMetaSchema>;
+    }>;
 
-    for (const id of pageIds) {
+    for (const page of pageEndpoints) {
       try {
-        const siteMeta = await fetchSiteMeta(baseUrl, id);
-        pageConfigEntries.push({ id, siteMeta });
+        const siteMeta = await fetchSiteMeta(page.baseUrl, page.id);
+        pageConfigEntries.push({
+          id: page.id,
+          baseUrl: page.baseUrl,
+          siteMeta,
+        });
       } catch (error) {
-        console.error(`Failed to fetch site meta for page "${id}":`, error);
-        pageConfigEntries.push({ id, siteMeta: siteMetaSchema.parse({}) });
+        console.error(`Failed to fetch site meta for page "${page.id}":`, error);
+        pageConfigEntries.push({
+          id: page.id,
+          baseUrl: page.baseUrl,
+          siteMeta: siteMetaSchema.parse({}),
+        });
       }
     }
 
