@@ -6,8 +6,8 @@ import Image from 'next/image';
 import NextLink from 'next/link';
 
 import { usePageConfig } from '@/components/context/PageConfigContext';
-import { resolveIconUrl } from '@/config/site';
 import type { PageTabMeta } from '@/types/page';
+import { buildIconProxyUrl } from '@/utils/icon-proxy';
 
 interface PageTabsProps {
   tabs?: PageTabMeta[];
@@ -30,7 +30,7 @@ export function PageTabs({ tabs: providedTabs }: PageTabsProps) {
     const title = metaFromPreload?.title?.trim() || fallbackSiteMeta?.title?.trim() || id;
     const description =
       metaFromPreload?.description?.trim() || fallbackSiteMeta?.description?.trim();
-    const icon = resolveIconUrl(metaFromPreload?.icon || fallbackSiteMeta?.icon);
+    const icon = buildIconProxyUrl(id);
 
     const href = id === pageConfig.defaultPageId ? '/' : `/${id}`;
     const isActive = pageConfig.pageId === id;
@@ -52,12 +52,12 @@ export function PageTabs({ tabs: providedTabs }: PageTabsProps) {
     >
       <ul className="container mx-auto max-w-7xl px-6 flex gap-2 md:gap-3 overflow-x-auto py-3">
         {resolvedTabs.map(({ id, title, description, icon, href, isActive }) => (
-          <li key={id} className="flex-shrink-0">
+          <li key={id} className="shrink-0">
             <NextLink
               href={href}
               aria-current={isActive ? 'page' : undefined}
               className={clsx(
-                'group inline-flex items-center gap-3 min-w-[176px] rounded-2xl border px-4 py-3 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary',
+                'group inline-flex items-center gap-3 min-w-44 rounded-2xl border px-4 py-3 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary',
                 isActive
                   ? 'border-primary/60 bg-primary/10 text-primary shadow-md'
                   : 'border-default-200 text-default-500 hover:border-primary/40 hover:text-primary hover:bg-default-100/70'

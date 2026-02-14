@@ -1,7 +1,7 @@
 import { title } from '@/components/basic/primitives';
 import { PageConfigProvider } from '@/components/context/PageConfigContext';
 import { AppShell } from '@/components/layout/AppShell';
-import { getConfig } from '@/config/api';
+import { getConfig, toPublicConfig } from '@/config/api';
 import { getGlobalConfig, getPageTabsMetadata } from '@/services/config.server';
 
 export default async function AboutPage() {
@@ -17,7 +17,7 @@ export default async function AboutPage() {
   ]);
 
   return (
-    <PageConfigProvider initialConfig={pageConfig}>
+    <PageConfigProvider initialConfig={toPublicConfig(pageConfig)}>
       <AppShell footerConfig={footerConfig} pageTabs={pageTabs}>
         <div>
           <h1 className={title()}>About</h1>

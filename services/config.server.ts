@@ -4,6 +4,7 @@ import type { PageTabMeta } from '@/types/page';
 import { ConfigError } from '@/utils/errors';
 import { extractPreloadData } from '@/utils/json-processor';
 import { sanitizeJsonString } from '@/utils/json-sanitizer';
+import { buildIconProxyUrl } from '@/utils/icon-proxy';
 import { fetchPreloadDataFromApi, getPreloadPayload } from '@/utils/preload-data';
 import * as cheerio from 'cheerio';
 import { cache } from 'react';
@@ -119,16 +120,11 @@ export const getPageTabsMetadata = cache(async (): Promise<PageTabMeta[]> => {
             ? meta.description.trim()
             : pageConfig.siteMeta.description?.trim();
 
-        const icon =
-          typeof meta.icon === 'string' && meta.icon.trim().length > 0
-            ? meta.icon.trim()
-            : pageConfig.siteMeta.icon;
-
         return {
           id: pageId,
           title,
           description,
-          icon,
+          icon: buildIconProxyUrl(pageId),
         } satisfies PageTabMeta;
       } catch (error) {
         console.error('Failed to resolve metadata for status page tab', {
@@ -144,7 +140,7 @@ export const getPageTabsMetadata = cache(async (): Promise<PageTabMeta[]> => {
           title: fallbackTitle && fallbackTitle.length > 0 ? fallbackTitle : pageId,
           description:
             fallbackDescription && fallbackDescription.length > 0 ? fallbackDescription : undefined,
-          icon: pageConfig.siteMeta.icon,
+          icon: buildIconProxyUrl(pageId),
         } satisfies PageTabMeta;
       }
     })
@@ -188,6 +184,7 @@ export const getGlobalConfig = cache(async (pageId?: string): Promise<GlobalConf
     const result: GlobalConfig = {
       config: {
         ...preloadData.config,
+        icon: buildIconProxyUrl(config.pageId),
         theme,
       },
       incident: preloadData.incident
@@ -216,7 +213,7 @@ export const getGlobalConfig = cache(async (pageId?: string): Promise<GlobalConf
         slug: '',
         title: '',
         description: '',
-        icon: '/icon.svg',
+        icon: buildIconProxyUrl(config.pageId),
         theme: 'system',
         published: true,
         showTags: true,

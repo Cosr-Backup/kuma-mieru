@@ -1,7 +1,7 @@
 import { PageConfigProvider } from '@/components/context/PageConfigContext';
 import { AppShell } from '@/components/layout/AppShell';
 import { StatusPage } from '@/components/status/StatusPage';
-import { getConfig } from '@/config/api';
+import { getConfig, toPublicConfig } from '@/config/api';
 import { getGlobalConfig, getPageTabsMetadata } from '@/services/config.server';
 
 export default async function HomePage() {
@@ -17,7 +17,7 @@ export default async function HomePage() {
   ]);
 
   return (
-    <PageConfigProvider key={pageConfig.pageId} initialConfig={pageConfig}>
+    <PageConfigProvider key={pageConfig.pageId} initialConfig={toPublicConfig(pageConfig)}>
       <AppShell footerConfig={footerConfig} pageTabs={pageTabs}>
         <StatusPage />
       </AppShell>

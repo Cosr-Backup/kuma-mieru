@@ -11,6 +11,7 @@ interface CustomResponse {
   headers: Record<string, string>;
   text: () => Promise<string>;
   json: () => Promise<unknown>;
+  arrayBuffer: () => Promise<ArrayBuffer>;
 }
 
 interface NodeError extends Error {
@@ -88,14 +89,18 @@ async function makeRequest(
           : {}),
       },
       res => {
-        let responseBody = '';
+        const chunks: Buffer[] = [];
 
-        res.setEncoding('utf8');
-        res.on('data', (chunk: string) => {
-          responseBody += chunk;
+        res.on('data', (chunk: Buffer | string) => {
+          if (typeof chunk === 'string') {
+            chunks.push(Buffer.from(chunk, 'utf8'));
+            return;
+          }
+          chunks.push(chunk);
         });
 
         res.on('end', () => {
+          const responseBody = Buffer.concat(chunks);
           const response: CustomResponse = {
             ok: res.statusCode ? res.statusCode >= 200 && res.statusCode < 300 : false,
             status: res.statusCode || 0,
@@ -106,8 +111,13 @@ async function makeRequest(
                 Array.isArray(value) ? value.join(', ') : value || '',
               ])
             ),
-            text: async () => responseBody,
-            json: async () => JSON.parse(responseBody),
+            text: async () => responseBody.toString('utf8'),
+            json: async () => JSON.parse(responseBody.toString('utf8')),
+            arrayBuffer: async () =>
+              responseBody.buffer.slice(
+                responseBody.byteOffset,
+                responseBody.byteOffset + responseBody.byteLength
+              ),
           };
 
           resolve(response);

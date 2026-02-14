@@ -1,4 +1,4 @@
-import type { Config } from '@/types/config';
+import type { Config, PublicConfig } from '@/types/config';
 import { env } from './env';
 
 function normalizeBaseUrl(baseUrl: string) {
@@ -66,4 +66,28 @@ export const getAvailablePageIds = () => [...env.config.pageIds];
 
 export const validateConfig = () => {
   return true;
+};
+
+export const toPublicConfig = (config: Config): PublicConfig => {
+  const {
+    defaultPageId,
+    pageId,
+    pageIds,
+    pages,
+    siteMeta,
+    isPlaceholder,
+    isEditThisPage,
+    isShowStarButton,
+  } = config;
+
+  return {
+    defaultPageId,
+    pageId,
+    pageIds,
+    pages,
+    siteMeta,
+    isPlaceholder,
+    isEditThisPage,
+    isShowStarButton,
+  };
 };
