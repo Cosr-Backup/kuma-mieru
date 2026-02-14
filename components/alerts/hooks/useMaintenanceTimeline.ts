@@ -40,11 +40,5 @@ export function useMaintenanceTimeline(
       displayEndTime: endTime + timezoneOffsetMs,
       progressPercent,
     };
-  }, [
-    currentTimeSlot?.startDate,
-    currentTimeSlot?.endDate,
-    maintenance.timezoneOffset,
-    maintenance.status,
-    now,
-  ]);
+  }, [currentTimeSlot, maintenance.timezoneOffset, now]);
 }
