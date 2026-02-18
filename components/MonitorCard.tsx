@@ -3,7 +3,7 @@ import type { MonitorCardProps } from '@/types/monitor';
 import { Button, Card, CardBody, CardHeader, Chip, Divider, Tooltip } from '@heroui/react';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
-import { AlertCircle, CheckCircle2, LayoutList, MinusCircle } from 'lucide-react';
+import { LayoutList } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -12,6 +12,12 @@ import { MonitoringChart } from './charts/MonitoringChart';
 import { ResponsStats } from './charts/ResponsStats';
 import { StatusBlockIndicator } from './charts/StatusBlockIndicator';
 import { usePageConfig } from './context/PageConfigContext';
+import {
+  getMonitorCardStatusMeta,
+  getMonitorDetailPath,
+  getTagChipStyle,
+  getUptimeRingData,
+} from './utils/monitor-card';
 
 const VIEW_PREFERENCE_KEY = 'view-preference-monitor-card';
 
@@ -58,23 +64,12 @@ export function MonitorCard({
     }
   }, [localLiteView, externalLiteView]);
 
-  const lastHeartbeat = heartbeats[heartbeats.length - 1];
-  const status = lastHeartbeat?.status ?? 0;
-
-  const chartColor = status === 1 ? 'success' : status === 2 ? 'warning' : 'danger';
-
-  const StatusIcon = status === 1 ? CheckCircle2 : status === 2 ? MinusCircle : AlertCircle;
-
-  const uptimeData = [
-    {
-      value: uptime24h * 100,
-      fill: uptime24h > 0.98 ? '#17c964' : uptime24h > 0.9 ? '#f5a524' : '#f31260',
-    },
-  ];
+  const { statusVisual, StatusIcon } = getMonitorCardStatusMeta(heartbeats);
+  const uptimeData = getUptimeRingData(uptime24h, statusVisual.ringFill);
 
   const handleClick = () => {
     if (isHome) {
-      const detailPath = `/monitor/${monitor.id}?pageId=${encodeURIComponent(pageConfig.pageId)}`;
+      const detailPath = getMonitorDetailPath(monitor.id, pageConfig.pageId);
       router.push(detailPath);
     }
   };
@@ -117,24 +112,18 @@ export function MonitorCard({
         <CardHeader className="grid grid-cols-[1fr_auto] gap-4 items-start">
           <div className="grid grid-rows-[auto_minmax(28px,auto)] gap-2 min-w-0 overflow-hidden">
             <div className="flex items-center gap-2 w-full min-w-0">
-              <StatusIcon className={`text-${chartColor} h-5 w-5 ml-1 shrink-0`} />
-              <h3 className="text-lg font-semibold truncate text-ellipsis max-w-full">
-                {monitor.name}
-              </h3>
+              <StatusIcon className={clsx(statusVisual.iconClassName, 'h-5 w-5 ml-1 shrink-0')} />
+              <Tooltip content={monitor.name} placement="top" delay={300}>
+                <h3 className="text-lg font-semibold truncate text-ellipsis max-w-36 md:max-w-40 lg:max-w-48">
+                  {monitor.name}
+                </h3>
+              </Tooltip>
             </div>
             <div>
               {monitor.tags && monitor.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {monitor.tags.map(tag => (
-                    <Chip
-                      key={tag.id}
-                      size="sm"
-                      variant="flat"
-                      style={{
-                        backgroundColor: `${tag.color}15`,
-                        color: tag.color,
-                      }}
-                    >
+                    <Chip key={tag.id} size="sm" variant="flat" style={getTagChipStyle(tag.color)}>
                       {tag.name}
                       {tag?.value && `: ${tag.value}`}
                     </Chip>
@@ -145,7 +134,12 @@ export function MonitorCard({
           </div>
           <div className="flex items-start gap-2">
             <div className={clsx('shrink-0', isHome ? '' : 'mr-4')}>
-              <ResponsStats value={uptimeData[0].value} fill={uptimeData[0].fill} isHome={isHome} />
+              <ResponsStats
+                value={uptimeData[0].value}
+                fill={uptimeData[0].fill}
+                isHome={isHome}
+                valueClassName={statusVisual.valueClassName}
+              />
             </div>
             {!disableViewToggle && (
               <Tooltip content={t('view.switchToLite')}>
@@ -163,10 +157,15 @@ export function MonitorCard({
 
           <div className="self-end w-full">
             {!isSafari && (
-              <MonitoringChart heartbeats={heartbeats} height={120} color={chartColor} showGrid />
+              <MonitoringChart
+                heartbeats={heartbeats}
+                height={120}
+                color={statusVisual.chartColor}
+                showGrid
+              />
             )}{' '}
             {isSafari && (
-              <div className="w-full h-[120px] flex items-center justify-center text-default-500">
+              <div className="w-full h-30 flex items-center justify-center text-default-500">
                 {t('view.safariWarning')}
               </div>
             )}

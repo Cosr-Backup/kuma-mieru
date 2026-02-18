@@ -2,7 +2,7 @@ import type { Heartbeat } from '@/types/monitor';
 import { clsx } from 'clsx';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CustomTooltip } from '../ui/CustomTooltip';
 import { calculatePingStats, getStatusColor } from '../utils/charts';
 import { COLOR_SYSTEM } from '../utils/colors';
@@ -16,7 +16,7 @@ interface StatusBlockIndicatorProps {
 
 const VIEW_PREFERENCE_KEY = 'view-preference';
 const BLOCK_BASE_CLASS =
-  'flex-1 h-full cursor-pointer transition-all hover:opacity-80 dark:hover:opacity-90';
+  'flex-1 h-full cursor-pointer transition-all hover:opacity-80 dark:hover:opacity-90 min-w-[4px]';
 
 export function StatusBlockIndicator({
   heartbeats,
@@ -71,7 +71,7 @@ export function StatusBlockIndicator({
   }, [heartbeats, pingStats, t]);
 
   return (
-    <div className={clsx(className, 'relative mt-4 flex flex-col gap-1')}>
+    <div className={clsx('relative mt-4 flex flex-col gap-1 min-w-0', className)}>
       {/* 图例和延迟统计 */}
       <div className="absolute -top-5 flex w-full items-center justify-between">
         {!isGlobalLiteView && <PingStats heartbeats={recentHeartbeats} isHome={isHome} />}
@@ -81,19 +81,20 @@ export function StatusBlockIndicator({
             isHome && 'ml-auto'
           )}
         >
-          {Object.entries(COLOR_SYSTEM)
-            .filter(([_, value]) => value.showInLegend)
-            .map(([key, value]) => (
-              <div key={key} className="flex items-center gap-1 text-xs">
-                <div className={clsx('w-1.5 h-1.5 rounded-full', value.bg.dark)} />
-                <span>{t(value.label)}</span>
-              </div>
-            ))}
+          {!isGlobalLiteView &&
+            Object.entries(COLOR_SYSTEM)
+              .filter(([_, value]) => value.showInLegend)
+              .map(([key, value]) => (
+                <div key={key} className="flex items-center gap-1 text-xs">
+                  <div className={clsx('w-1.5 h-1.5 rounded-full', value.bg.dark)} />
+                  <span>{t(value.label)}</span>
+                </div>
+              ))}
         </div>
       </div>
 
       {/* 状态块 */}
-      <div className="flex gap-0.5 mt-2 h-3 w-[98%] justify-center items-center mx-auto rounded-sm overflow-hidden">
+      <div className="flex gap-0.5 mt-2 h-3 w-[98%] justify-end items-center mx-auto rounded-sm overflow-hidden">
         {heartbeatBlocks.map(({ key, tooltipContent, blockClassName }) => (
           <CustomTooltip key={key} content={tooltipContent}>
             <div className={blockClassName} />

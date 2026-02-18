@@ -9,6 +9,7 @@ interface ResponsStatsProps {
   fill: string;
   isHome?: boolean;
   size?: 'sm' | 'md' | 'lg';
+  valueClassName?: string;
 }
 
 const TOOLTIP_MOTION_PROPS = {
@@ -30,7 +31,13 @@ const TOOLTIP_MOTION_PROPS = {
   },
 } as const;
 
-export function ResponsStats({ value, fill, isHome, size = 'md' }: ResponsStatsProps) {
+export function ResponsStats({
+  value,
+  fill,
+  isHome,
+  size = 'md',
+  valueClassName,
+}: ResponsStatsProps) {
   const t = useTranslations('node');
   const formattedValue = useMemo(() => value.toFixed(2), [value]);
   const data = useMemo(() => [{ value, fill }], [value, fill]);
@@ -52,7 +59,7 @@ export function ResponsStats({ value, fill, isHome, size = 'md' }: ResponsStatsP
   const chartSize = size === 'sm' ? 'w-6 h-6' : size === 'lg' ? 'w-12 h-12' : 'w-10 h-10';
   const textSize = size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-base' : 'text-sm';
   const barSize = size === 'sm' ? 6 : size === 'lg' ? 14 : 12;
-  const gapClass = isHome ? 'gap-1' : 'gap-2';
+  const gapClass = size === 'lg' ? 'gap-0.2' : 'gap-0.1';
 
   return (
     <HeroUITooltip
@@ -80,7 +87,7 @@ export function ResponsStats({ value, fill, isHome, size = 'md' }: ResponsStatsP
             </RadialBarChart>
           </ResponsiveContainer>
         </div>
-        <span className={`${textSize} text-gray-500`}>{formattedValue}%</span>
+        <span className={clsx(textSize, valueClassName ?? 'text-gray-500')}>{formattedValue}%</span>
       </div>
     </HeroUITooltip>
   );
