@@ -46,8 +46,13 @@ Built with Next.js 16, TypeScript, and Recharts, this project enhances Uptime Ku
   - [Docker Deployment :whale: (Beta)](#docker-deployment-whale-beta)
     - [Using Docker Compose (Recommended)](#using-docker-compose-recommended)
     - [Manual Docker Deployment](#manual-docker-deployment)
-    - [Environment Variables](#environment-variables)
-    - [Health Check](#health-check)
+      - [1. Pull Container Image](#1-pull-container-image)
+        - [Pull from GHCR (Recommended)](#pull-from-ghcr-recommended)
+      - [2. Modify Environment Variables](#2-modify-environment-variables)
+      - [3. Start Container Service](#3-start-container-service)
+        - [Using GHCR Image](#using-ghcr-image)
+  - [Version Strategy](#version-strategy)
+  - [Environment Variables](#environment-variables)
   - [Integration with Uptime Kuma :link:](#integration-with-uptime-kuma-link)
   - [FAQ :question:](#faq-question)
     - [Why is the time I see in Kuma Mieru offset from the time I see in Uptime Kuma?](#why-is-the-time-i-see-in-kuma-mieru-offset-from-the-time-i-see-in-uptime-kuma)
@@ -219,32 +224,47 @@ Go to <https://vercel.com/new>, select **Import** to import the repository you j
 
 ### Manual Docker Deployment
 
-1. **Pull Image from GHCR (Recommended)**
+#### 1. Pull Container Image
 
-   ```bash
-   docker pull ghcr.io/alice39s/kuma-mieru:1
-   ```
+##### Pull from GHCR (Recommended)
 
-2. **Modify Environment Variables**
+```bash
+docker pull ghcr.io/alice39s/kuma-mieru:1
+```
 
-   ```bash
-   cp .env.example .env
-   ```
+#### 2. Modify Environment Variables
 
-   Please refer to the [Environment Variables](#environment-variables) section for more details.
+Copy `.env.example` file to create your `.env` file:
 
-3. **Run Container**
+```bash
+cp .env.example .env
+```
 
-   ```bash
-   docker run -d \
-     --name kuma-mieru \
-     -p 3883:3000 \
-     -e UPTIME_KUMA_URLS=https://example.kuma-mieru.invalid/status/your-status-page-id \
-     -e KUMA_MIERU_TITLE="My Monitoring Dashboard" \
-     ghcr.io/alice39s/kuma-mieru:1
-   ```
+Please refer to the [Environment Variables](#environment-variables) section for more details, and prioritize configuring the `UPTIME_KUMA_URLS` variable in `.env`.
 
-### Environment Variables
+#### 3. Start Container Service
+
+##### Using GHCR Image
+
+```bash
+docker run -d \
+  --name kuma-mieru \
+  -p 3883:3000 \
+  -e UPTIME_KUMA_URLS="https://example.kuma-mieru.invalid/status/default|https://example.kuma-mieru.invalid/status/secondary" \
+  -e KUMA_MIERU_TITLE="Kuma Mieru" \
+  ghcr.io/alice39s/kuma-mieru:1
+```
+
+## Version Strategy
+
+> [!WARNING]
+> Docker image recommends using `ghcr.io/alice39s/kuma-mieru:1` (major version channel).
+>
+> Forward compatibility will be maintained as much as possible within `v1` major version; `v2` will be a version containing major Breaking Changes.
+>
+> Pinning to minor/patch versions (e.g., `:1.6` or `:1.6.2`) is not recommended unless you have a clear canary and rollback strategy.
+
+## Environment Variables
 
 First, assume your Uptime Kuma status page URL is:
 
@@ -260,24 +280,29 @@ For multiple status pages, separate full URLs with `|`:
 
 Environment variables (including backward compatibility):
 
-| Variable Name                | Required | Description                                                                                                          | Example                                                                                                    |
-| ---------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| UPTIME_KUMA_URLS             | Yes\*    | Recommended. Full status page URL(s), supports `\|` separated multiple URLs (can come from different Kuma instances) | <https://example.kuma-mieru.invalid/status/default\|https://example.kuma-mieru.invalid/status/secondary>   |
-| UPTIME_KUMA_BASE_URL         | Yes\*    | Legacy. Base URL of Uptime Kuma instance (used only when `UPTIME_KUMA_URLS` is not set)                              | <https://example.kuma-mieru.invalid>                                                                       |
-| PAGE_ID                      | Yes\*    | Legacy. Status page IDs, comma-separated and first value is default (used only when `UPTIME_KUMA_URLS` not set)      | default,status-asia                                                                                        |
-| KUMA_MIERU_EDIT_THIS_PAGE    | No       | Show "Edit This Page" button (new variable name)                                                                     | false                                                                                                      |
-| KUMA_MIERU_SHOW_STAR_BUTTON  | No       | Show "Star on GitHub" button (new variable name)                                                                     | true                                                                                                       |
-| KUMA_MIERU_TITLE             | No       | Custom page title (new variable name)                                                                                | My Monitoring Dashboard                                                                                    |
-| KUMA_MIERU_DESCRIPTION       | No       | Custom page description (new variable name)                                                                          | A beautiful monitoring dashboard                                                                           |
-| KUMA_MIERU_ICON              | No       | Custom page icon URL (new variable name)                                                                             | /icon.svg                                                                                                  |
-| FEATURE_EDIT_THIS_PAGE       | No       | Legacy alias of `KUMA_MIERU_EDIT_THIS_PAGE`                                                                          | false                                                                                                      |
-| FEATURE_SHOW_STAR_BUTTON     | No       | Legacy alias of `KUMA_MIERU_SHOW_STAR_BUTTON`                                                                        | true                                                                                                       |
-| FEATURE_TITLE                | No       | Legacy alias of `KUMA_MIERU_TITLE`                                                                                   | My Monitoring Dashboard                                                                                    |
-| FEATURE_DESCRIPTION          | No       | Legacy alias of `KUMA_MIERU_DESCRIPTION`                                                                             | A beautiful monitoring dashboard                                                                           |
-| FEATURE_ICON                 | No       | Legacy alias of `KUMA_MIERU_ICON`                                                                                    | /icon.svg                                                                                                  |
-| ALLOW_INSECURE_TLS           | No       | Whether to skip HTTPS certificate validation when requesting upstream Uptime Kuma (trusted self-signed only)         | `false` (default, strict validation) / `true` (skip validation, security risk)                             |
-| ALLOW_EMBEDDING              | No       | Whether to allow embedding in iframe (applies at runtime; no image rebuild needed)                                   | `false` (block) / `true` (allow all, not recommended) / `example.com,app.com` (whitelist)                  |
-| STRICT_IMAGE_REMOTE_PATTERNS | No       | Enable strict remote image domain allowlist (build-time)                                                             | `false` (default, allow all remote image domains) / `true` (allow only domains generated by image-domains) |
+| Variable Name                   | Required | Description                                                                                                          | Example                                                                                                    |
+| ------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| UPTIME_KUMA_URLS                | Yes\*    | Recommended. Full status page URL(s), supports `\|` separated multiple URLs (can come from different Kuma instances) | <https://example.kuma-mieru.invalid/status/default\|https://example.kuma-mieru.invalid/status/secondary>   |
+| UPTIME_KUMA_BASE_URL            | Yes\*    | Legacy. Base URL of Uptime Kuma instance (used only when `UPTIME_KUMA_URLS` is not set)                              | <https://example.kuma-mieru.invalid>                                                                       |
+| PAGE_ID                         | Yes\*    | Legacy. Status page IDs, comma-separated and first value is default (used only when `UPTIME_KUMA_URLS` not set)      | default,status-asia                                                                                        |
+| KUMA_MIERU_EDIT_THIS_PAGE       | No       | Show "Edit This Page" button (new variable name)                                                                     | false                                                                                                      |
+| KUMA_MIERU_SHOW_STAR_BUTTON     | No       | Show "Star on GitHub" button (new variable name)                                                                     | true                                                                                                       |
+| KUMA_MIERU_TITLE                | No       | Custom page title (new variable name)                                                                                | My Monitoring Dashboard                                                                                    |
+| KUMA_MIERU_DESCRIPTION          | No       | Custom page description (new variable name)                                                                          | A beautiful monitoring dashboard                                                                           |
+| KUMA_MIERU_ICON                 | No       | Custom page icon URL (new variable name)                                                                             | /icon.svg                                                                                                  |
+| FEATURE_EDIT_THIS_PAGE          | No       | Legacy alias of `KUMA_MIERU_EDIT_THIS_PAGE`                                                                          | false                                                                                                      |
+| FEATURE_SHOW_STAR_BUTTON        | No       | Legacy alias of `KUMA_MIERU_SHOW_STAR_BUTTON`                                                                        | true                                                                                                       |
+| FEATURE_TITLE                   | No       | Legacy alias of `KUMA_MIERU_TITLE`                                                                                   | My Monitoring Dashboard                                                                                    |
+| FEATURE_DESCRIPTION             | No       | Legacy alias of `KUMA_MIERU_DESCRIPTION`                                                                             | A beautiful monitoring dashboard                                                                           |
+| FEATURE_ICON                    | No       | Legacy alias of `KUMA_MIERU_ICON`                                                                                    | /icon.svg                                                                                                  |
+| ALLOW_INSECURE_TLS              | No       | Whether to skip HTTPS certificate validation when requesting upstream Uptime Kuma (trusted self-signed only)         | `false` (default, strict validation) / `true` (skip validation, security risk)                             |
+| REQUEST_TIMEOUT_MS              | No       | Global upstream request timeout (milliseconds, default 8000)                                                         | `8000`                                                                                                     |
+| REQUEST_RETRY_MAX               | No       | Global upstream request max retry count (default 3)                                                                  | `3`                                                                                                        |
+| REQUEST_RETRY_DELAY_MS          | No       | Global upstream request retry base interval (milliseconds, default 500)                                              | `500`                                                                                                      |
+| SSR_STRICT_MODE                 | No       | Enable strict SSR failure mode (trigger global error page when all pages fail)                                       | `true` / `false` (default)                                                                                 |
+| NEXT_PUBLIC_ERROR_PAGE_DEV_MODE | No       | Whether to show full stack trace in error page                                                                       | `false` (default) / `true`                                                                                 |
+| ALLOW_EMBEDDING                 | No       | Whether to allow embedding in iframe (applies at runtime; no image rebuild needed)                                   | `false` (block) / `true` (allow all, not recommended) / `example.com,app.com` (whitelist)                  |
+| STRICT_IMAGE_REMOTE_PATTERNS    | No       | Enable strict remote image domain allowlist (build-time)                                                             | `false` (default, allow all remote image domains) / `true` (allow only domains generated by image-domains) |
 
 \* Use either `UPTIME_KUMA_URLS` or `UPTIME_KUMA_BASE_URL + PAGE_ID`. If both are set, `UPTIME_KUMA_URLS` takes precedence.
 
@@ -286,36 +311,6 @@ After editing `.env`, run `docker compose up -d --force-recreate` so the contain
 > [!WARNING]
 > By default (`STRICT_IMAGE_REMOTE_PATTERNS=false`), `next/image` remote domain restrictions are relaxed to avoid image failures when Docker runtime endpoints change.
 > In high-security environments, set `STRICT_IMAGE_REMOTE_PATTERNS=true` for self-built images and ensure your build step generates a complete domain allowlist.
-
-### Health Check
-
-The Docker container includes a built-in health check mechanism that verifies service status every 30 seconds. The health check API endpoint is `/api/health`, returning:
-
-```json
-{
-  "status": "ok",
-  "timestamp": "2024-03-20T12:34:56.789Z",
-  "uptime": 123.456
-}
-```
-
-Check container health status using:
-
-```bash
-docker ps
-```
-
-Or via Docker Compose:
-
-```bash
-docker compose ps
-```
-
-Directly access the health check API:
-
-```bash
-curl http://localhost:3883/api/health
-```
 
 ## Integration with Uptime Kuma :link:
 

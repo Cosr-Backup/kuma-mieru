@@ -96,5 +96,19 @@
     "systemWarning": "部分服務出現問題",
     "systemError": "系統嚴重故障",
     "systemUnknown": "系統狀態未明"
+  },
+  "errorPage": {
+    "title": "發生錯誤！",
+    "currentUnavailableTitle": "目前狀態頁面暫時無法使用",
+    "globalTitle": "500 - 系統不可用",
+    "notFoundTitle": "404 - 頁面未找到",
+    "diagnostics": "以下是錯誤診斷資訊，可用於向開發者回饋問題。",
+    "httpStatus": "HTTP 狀態",
+    "httpStatusUnavailable": "無 HTTP 回應",
+    "retry": "重試",
+    "retrying": "重試中...",
+    "backHome": "返回主頁",
+    "globalMessage": "上游狀態源目前無法訪問，請稍後再試。",
+    "notFoundMessage": "請求的狀態頁面不存在或已不再可用。"
   }
 }

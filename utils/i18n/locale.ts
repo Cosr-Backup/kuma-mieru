@@ -1,7 +1,8 @@
 'use server';
 
 import { cookies, headers } from 'next/headers';
-import { type Locale, defaultLocale, locales } from './config';
+import { type Locale, defaultLocale } from './config';
+import { resolveLocaleFromCandidates } from './resolve-locale';
 
 const COOKIE_NAME = 'Next_i18n';
 
@@ -19,25 +20,7 @@ export const getUserLocale = async () => {
     return languageCode.trim();
   });
 
-  const validLocales = new Set(locales.map(locale => locale.key));
-
-  // First try exact-match
-  const exactMatch = languages.find(lang => validLocales.has(lang as Locale));
-  if (exactMatch) return exactMatch;
-
-  // If no exact match, try matching language base
-  for (const lang of languages) {
-    const baseLanguage = lang.split('-')[0]; // Get base language (e.g., 'en' from 'en-US')
-
-    // Find first locale that starts with the base language
-    const matchingLocale = Array.from(validLocales).find(
-      validLocale => validLocale.startsWith(`${baseLanguage}-`) || validLocale === baseLanguage
-    );
-
-    if (matchingLocale) return matchingLocale;
-  }
-
-  return defaultLocale;
+  return resolveLocaleFromCandidates(languages);
 };
 
 export const setUserLocale = async (locale: Locale) => {

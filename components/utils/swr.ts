@@ -6,21 +6,41 @@ import type { MonitorResponse, MonitoringData } from '@/types/monitor';
 import useSWR, { mutate } from 'swr';
 import type { SWRConfiguration } from 'swr';
 
+interface ApiEnvelope {
+  success?: boolean;
+  status?: 'ok' | 'partial' | 'all_failed' | 'partial_failed';
+  error?: string;
+}
+
 /**
  * swr 通用 fetcher
  * @param url - 请求的 URL
  * @returns 解析后的 JSON data
  * @throws 请求失败抛出错误
  */
-const fetcher = async (url: string) => {
+const fetcher = async <T>(url: string): Promise<T> => {
   const response = await fetch(url);
-  const data = await response.json();
+  const data = (await response.json()) as ApiEnvelope & Record<string, unknown>;
 
-  if (!data.success && url.includes('/api/monitor')) {
-    throw new Error('Failed to fetch monitor data');
+  if (!response.ok) {
+    const statusText = response.statusText || 'Unknown Status';
+    const errorMessage =
+      typeof data.error === 'string' && data.error.length > 0
+        ? data.error
+        : `Request failed with status ${response.status} ${statusText}`;
+    throw new Error(`HTTP ${response.status} ${statusText}: ${errorMessage}`);
   }
 
-  return data;
+  if (data.success === false || data.status === 'all_failed') {
+    const statusText = response.statusText || 'Unknown Status';
+    const errorMessage =
+      typeof data.error === 'string' && data.error.length > 0
+        ? data.error
+        : `Failed to fetch data from ${url}`;
+    throw new Error(`HTTP ${response.status} ${statusText}: ${errorMessage}`);
+  }
+
+  return data as T;
 };
 
 /**

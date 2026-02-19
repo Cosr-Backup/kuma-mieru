@@ -96,5 +96,19 @@
     "systemWarning": "一部サービスに障害が発生しています",
     "systemError": "システムに重大障害が発生しました",
     "systemUnknown": "システム状態を確認できません"
+  },
+  "errorPage": {
+    "title": "エラーが発生しました！",
+    "currentUnavailableTitle": "このステータスページは現在利用できません",
+    "globalTitle": "500 - システム利用不可",
+    "notFoundTitle": "404 - ページが見つかりません",
+    "diagnostics": "以下はエラー診断情報です",
+    "httpStatus": "HTTP ステータス",
+    "httpStatusUnavailable": "HTTP 応答なし",
+    "retry": "再試行",
+    "retrying": "再試行中...",
+    "backHome": "ホームに戻る",
+    "globalMessage": "上流ステータスソースに現在アクセスできません。しばらくしてから再試行してください。",
+    "notFoundMessage": "要求されたステータスページが存在しないか、利用できなくなりました。"
   }
 }

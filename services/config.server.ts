@@ -1,6 +1,6 @@
 import { getConfig } from '@/config/api';
 import type { Config, GlobalConfig, Maintenance } from '@/types/config';
-import type { PageTabMeta } from '@/types/page';
+import type { PageTabMeta, PageTabsStatusMatrix } from '@/types/page';
 import { ConfigError } from '@/utils/errors';
 import { buildIconProxyUrl } from '@/utils/icon-proxy';
 import { resolvePreloadDataFromHtml } from '@/utils/preload-data';
@@ -8,6 +8,20 @@ import { cache } from 'react';
 import { ApiDataError, logApiError } from './utils/api-service';
 import { customFetchOptions, ensureUTCTimezone } from './utils/common';
 import { customFetch } from './utils/fetch';
+import { classifyRequestError, extractHttpStatusDetails } from './utils/request-error';
+
+export interface GlobalConfigResult {
+  success: boolean;
+  status: 'ok' | 'all_failed';
+  data: GlobalConfig;
+  failureType?: PageTabMeta['failureType'];
+  error?: string;
+}
+
+export interface PageTabsMetadataResult {
+  tabs: PageTabMeta[];
+  matrix: PageTabsStatusMatrix;
+}
 
 function resolvePageConfig(pageId?: string): Config {
   const config = getConfig(pageId);
@@ -17,6 +31,26 @@ function resolvePageConfig(pageId?: string): Config {
   }
 
   return config;
+}
+
+function buildFallbackGlobalConfig(config: Config): GlobalConfig {
+  return {
+    config: {
+      slug: '',
+      title: '',
+      description: '',
+      icon: buildIconProxyUrl(config.pageId),
+      theme: 'system',
+      published: true,
+      showTags: true,
+      customCSS: '',
+      footerText: '',
+      showPoweredBy: false,
+      googleAnalyticsId: null,
+      showCertificateExpiry: false,
+    },
+    maintenanceList: [],
+  };
 }
 
 function processMaintenanceData(maintenanceList: Maintenance[]): Maintenance[] {
@@ -81,16 +115,23 @@ export async function getMaintenanceData(pageId?: string) {
     return {
       success: false,
       maintenanceList: [],
+      failureType: classifyRequestError(error),
       error: error instanceof Error ? error.message : 'Unknown error occurred',
     };
   }
 }
 
-export const getPageTabsMetadata = cache(async (): Promise<PageTabMeta[]> => {
+export const getPageTabsMetadataResult = cache(async (): Promise<PageTabsMetadataResult> => {
   const baseConfig = getConfig();
 
   if (!baseConfig) {
-    return [];
+    return {
+      tabs: [],
+      matrix: {
+        status: 'all_failed',
+        failedPageIds: [],
+      },
+    };
   }
 
   const uniquePageIds = Array.from(new Set(baseConfig.pageIds));
@@ -122,12 +163,15 @@ export const getPageTabsMetadata = cache(async (): Promise<PageTabMeta[]> => {
           title,
           description,
           icon: buildIconProxyUrl(pageId),
+          health: 'healthy',
         } satisfies PageTabMeta;
       } catch (error) {
         console.error('Failed to resolve metadata for status page tab', {
           pageId,
           error,
         });
+
+        const statusDetails = extractHttpStatusDetails(error);
 
         const fallbackTitle = pageConfig.siteMeta.title?.trim();
         const fallbackDescription = pageConfig.siteMeta.description?.trim();
@@ -138,15 +182,47 @@ export const getPageTabsMetadata = cache(async (): Promise<PageTabMeta[]> => {
           description:
             fallbackDescription && fallbackDescription.length > 0 ? fallbackDescription : undefined,
           icon: buildIconProxyUrl(pageId),
+          health: 'unavailable',
+          failureType: classifyRequestError(error),
+          failureMessage: error instanceof Error ? error.message : 'Unknown error',
+          failureStatusCode: statusDetails.statusCode,
+          failureStatusMessage: statusDetails.statusMessage,
         } satisfies PageTabMeta;
       }
     })
   );
 
-  return tabs.filter(tab => tab !== null) as PageTabMeta[];
+  const resolvedTabs = tabs.filter(tab => tab !== null) as PageTabMeta[];
+  const failedPageIds = resolvedTabs.filter(tab => tab.health === 'unavailable').map(tab => tab.id);
+
+  const matrix: PageTabsStatusMatrix =
+    resolvedTabs.length > 0 && failedPageIds.length === resolvedTabs.length
+      ? {
+          status: 'all_failed',
+          failedPageIds,
+        }
+      : failedPageIds.length > 0
+        ? {
+            status: 'partial_failed',
+            failedPageIds,
+          }
+        : {
+            status: 'ok',
+            failedPageIds: [],
+          };
+
+  return {
+    tabs: resolvedTabs,
+    matrix,
+  };
 });
 
-export const getGlobalConfig = cache(async (pageId?: string): Promise<GlobalConfig> => {
+export const getPageTabsMetadata = cache(async (): Promise<PageTabMeta[]> => {
+  const result = await getPageTabsMetadataResult();
+  return result.tabs;
+});
+
+export const getGlobalConfigResult = cache(async (pageId?: string): Promise<GlobalConfigResult> => {
   const config = resolvePageConfig(pageId);
 
   try {
@@ -191,10 +267,14 @@ export const getGlobalConfig = cache(async (pageId?: string): Promise<GlobalConf
             lastUpdatedDate: ensureUTCTimezone(preloadData.incident.lastUpdatedDate),
           }
         : undefined,
-      maintenanceList: maintenanceList,
+      maintenanceList,
     };
 
-    return result;
+    return {
+      success: true,
+      status: 'ok',
+      data: result,
+    };
   } catch (error) {
     console.error(
       'Failed to get configuration data:',
@@ -206,23 +286,18 @@ export const getGlobalConfig = cache(async (pageId?: string): Promise<GlobalConf
     );
 
     return {
-      config: {
-        slug: '',
-        title: '',
-        description: '',
-        icon: buildIconProxyUrl(config.pageId),
-        theme: 'system',
-        published: true,
-        showTags: true,
-        customCSS: '',
-        footerText: '',
-        showPoweredBy: false,
-        googleAnalyticsId: null,
-        showCertificateExpiry: false,
-      },
-      maintenanceList: [],
+      success: false,
+      status: 'all_failed',
+      data: buildFallbackGlobalConfig(config),
+      failureType: classifyRequestError(error),
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
+});
+
+export const getGlobalConfig = cache(async (pageId?: string): Promise<GlobalConfig> => {
+  const result = await getGlobalConfigResult(pageId);
+  return result.data;
 });
 
 export const getUpstreamIconUrl = cache(async (config: Config): Promise<string | null> => {
@@ -279,7 +354,8 @@ export async function getPreloadData(config: Config) {
           : error,
     });
     throw new ConfigError(
-      'Failed to get preload data, please check network connection and server status'
+      'Failed to get preload data, please check network connection and server status',
+      error
     );
   }
 }

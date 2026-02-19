@@ -31,6 +31,7 @@ export function PageTabs({ tabs: providedTabs }: PageTabsProps) {
     const description =
       metaFromPreload?.description?.trim() || fallbackSiteMeta?.description?.trim();
     const icon = buildIconProxyUrl(id);
+    const health = metaFromPreload?.health ?? 'healthy';
 
     const href = id === pageConfig.defaultPageId ? '/' : `/${id}`;
     const isActive = pageConfig.pageId === id;
@@ -40,6 +41,7 @@ export function PageTabs({ tabs: providedTabs }: PageTabsProps) {
       title,
       description,
       icon,
+      health,
       href,
       isActive,
     };
@@ -48,16 +50,17 @@ export function PageTabs({ tabs: providedTabs }: PageTabsProps) {
   return (
     <nav
       aria-label={t('pageTabs')}
-      className="border-b border-default-100 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+      className="border-b border-default-100 bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/60"
     >
       <ul className="container mx-auto max-w-7xl px-6 flex gap-2 md:gap-3 overflow-x-auto py-3">
-        {resolvedTabs.map(({ id, title, description, icon, href, isActive }) => (
+        {resolvedTabs.map(({ id, title, description, icon, health, href, isActive }) => (
           <li key={id} className="shrink-0">
             <NextLink
               href={href}
               aria-current={isActive ? 'page' : undefined}
               className={clsx(
                 'group inline-flex items-center gap-3 min-w-44 rounded-2xl border px-4 py-3 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary',
+                health === 'unavailable' && 'border-danger/40 bg-danger/10 text-danger',
                 isActive
                   ? 'border-primary/60 bg-primary/10 text-primary shadow-md'
                   : 'border-default-200 text-default-500 hover:border-primary/40 hover:text-primary hover:bg-default-100/70'
@@ -73,6 +76,11 @@ export function PageTabs({ tabs: providedTabs }: PageTabsProps) {
                 {description ? (
                   <span className="truncate text-xs text-default-400" title={description}>
                     {description}
+                  </span>
+                ) : null}
+                {health === 'unavailable' ? (
+                  <span className="truncate text-xs text-danger" title="Unavailable">
+                    Unavailable
                   </span>
                 ) : null}
               </span>
