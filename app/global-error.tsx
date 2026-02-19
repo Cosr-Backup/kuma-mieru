@@ -3,15 +3,18 @@
 import { parseErrorDetails } from '@/app/lib/error-details';
 import { Footer } from '@/components/Footer';
 import enUS from '@/messages/en-US.json';
-import zhCN from '@/messages/zh-CN.json';
+import { defaultLocale, type Locale } from '@/utils/i18n/config';
+import { resolveLocaleFromCandidates } from '@/utils/i18n/resolve-locale';
 import { Button, Code } from '@heroui/react';
 import { AlertTriangle, RotateCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 
 export default function GlobalError({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
   const [isRetrying, startRetryTransition] = useTransition();
+  const [lang, setLang] = useState<Locale>(defaultLocale);
+  const [messages, setMessages] = useState(enUS);
 
   useEffect(() => {
     console.error(error);
@@ -22,9 +25,38 @@ export default function GlobalError({ error, reset }: { error: Error; reset: () 
     process.env.NEXT_PUBLIC_ERROR_PAGE_DEV_MODE === 'true' ||
     process.env.NODE_ENV === 'development';
 
-  const isZh = typeof navigator !== 'undefined' && navigator.language.startsWith('zh');
-  const t = (isZh ? zhCN : enUS).errorPage;
-  const lang = isZh ? 'zh-CN' : 'en-US';
+  useEffect(() => {
+    const candidates =
+      typeof navigator !== 'undefined'
+        ? navigator.languages && navigator.languages.length > 0
+          ? navigator.languages
+          : [navigator.language]
+        : [];
+
+    setLang(resolveLocaleFromCandidates(candidates));
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void import(`../messages/${lang}.json`)
+      .then(module => {
+        if (isMounted) {
+          setMessages(module.default as typeof enUS);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setMessages(enUS);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [lang]);
+
+  const t = useMemo(() => messages.errorPage, [messages]);
   const resolvedTitle = parsed.kind === 'all_unavailable' ? t.globalTitle : t.title;
   const resolvedHttpStatus =
     parsed.statusCode !== undefined
@@ -58,7 +90,9 @@ export default function GlobalError({ error, reset }: { error: Error; reset: () 
 
               <div className="mt-6 space-y-4">
                 <div className="rounded-lg bg-background/50 p-3">
-                  <p className="text-xs font-semibold uppercase text-default-500">{t.diagnostics}</p>
+                  <p className="text-xs font-semibold uppercase text-default-500">
+                    {t.diagnostics}
+                  </p>
                   <p className="mt-1 text-sm text-default-700">{parsed.diagnostics}</p>
                 </div>
 
