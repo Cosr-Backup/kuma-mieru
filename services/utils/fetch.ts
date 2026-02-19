@@ -25,9 +25,9 @@ interface RetryOptions {
 }
 
 const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
-  maxRetries: 3,
-  retryDelay: 1000,
-  timeout: 10000,
+  maxRetries: customFetchOptions.maxRetries,
+  retryDelay: customFetchOptions.retryDelay,
+  timeout: customFetchOptions.timeout,
 };
 
 let hasShownInsecureTlsWarning = false;
