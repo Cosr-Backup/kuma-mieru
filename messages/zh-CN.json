@@ -96,5 +96,19 @@
     "systemWarning": "部分服务出现异常",
     "systemError": "服务运行异常",
     "systemUnknown": "服务状态未知"
+  },
+  "errorPage": {
+    "title": "出错了！",
+    "currentUnavailableTitle": "当前状态页暂不可用",
+    "globalTitle": "500 - 系统不可用",
+    "notFoundTitle": "404 - 页面未找到",
+    "diagnostics": "以下是错误诊断信息，可用于向开发者反馈问题。",
+    "httpStatus": "HTTP 状态",
+    "httpStatusUnavailable": "无 HTTP 响应",
+    "retry": "重试",
+    "retrying": "重试中...",
+    "backHome": "返回首页",
+    "globalMessage": "上游状态源当前无法访问，请稍后重试。",
+    "notFoundMessage": "请求的状态页面不存在或已不再可用。"
   }
 }

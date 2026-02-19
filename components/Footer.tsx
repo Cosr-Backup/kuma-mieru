@@ -1,6 +1,5 @@
 'use client';
 
-import { useConfig } from '@/components/utils/swr';
 import type { SiteConfig } from '@/types/config';
 import { Link } from '@heroui/react';
 
@@ -11,8 +10,7 @@ interface FooterProps {
 }
 
 export function Footer({ config }: FooterProps) {
-  const { config: fetchedConfig } = useConfig();
-  const footerConfig = fetchedConfig?.config ?? config;
+  const footerConfig = config;
 
   const footerText = footerConfig?.footerText ?? '';
   const showPoweredBy = footerConfig?.showPoweredBy ?? false;

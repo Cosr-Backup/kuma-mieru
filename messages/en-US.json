@@ -96,5 +96,19 @@
     "systemWarning": "Partial service degradation detected",
     "systemError": "Critical system failure",
     "systemUnknown": "System status unavailable"
+  },
+  "errorPage": {
+    "title": "Something went wrong!",
+    "currentUnavailableTitle": "This status page is currently unavailable",
+    "globalTitle": "500 - System Unavailable",
+    "notFoundTitle": "404 - Page not found",
+    "diagnostics": "The following is error diagnostic information",
+    "httpStatus": "HTTP Status",
+    "httpStatusUnavailable": "No HTTP response",
+    "retry": "Retry",
+    "retrying": "Retrying...",
+    "backHome": "Back to home",
+    "globalMessage": "The upstream status sources are currently unreachable. Please retry in a few moments.",
+    "notFoundMessage": "The requested status page does not exist or is no longer available."
   }
 }
