@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { getString } from './lib/env';
-import { parseStatusPageUrl } from './lib/uptime-kuma';
+import { resolveEndpointConfig } from './lib/uptime-kuma';
 
 type ImageProtocol = 'http' | 'https';
 
@@ -52,25 +52,30 @@ const addDomainToMap = (
   map.set(value.hostname, protocols);
 };
 
-const parseBaseUrlsFromEnv = (): string[] => {
-  const rawUrls = process.env.UPTIME_KUMA_URLS?.trim();
-  if (!rawUrls) return [];
+const resolveBaseUrlsFromEndpointConfig = (): string[] => {
+  try {
+    const { pageEndpoints } = resolveEndpointConfig();
+    return Array.from(new Set(pageEndpoints.map(endpoint => endpoint.baseUrl)));
+  } catch (error) {
+    const hasEndpointEnv =
+      Boolean(process.env.UPTIME_KUMA_URLS?.trim()) ||
+      Boolean(process.env.UPTIME_KUMA_BASE_URL?.trim()) ||
+      Boolean(process.env.PAGE_ID?.trim());
 
-  return rawUrls
-    .split('|')
-    .map(s => s.trim())
-    .filter(Boolean)
-    .map(url => parseStatusPageUrl(url).baseUrl);
+    if (hasEndpointEnv) {
+      console.warn('[env] Failed to resolve endpoint config for image domains:', error);
+    }
+
+    return [];
+  }
 };
 
 const generateImageDomains = (): void => {
   const domainsMap = new Map<string, Set<ImageProtocol>>();
 
-  for (const baseUrl of parseBaseUrlsFromEnv()) {
+  for (const baseUrl of resolveBaseUrlsFromEndpointConfig()) {
     addDomainToMap(domainsMap, parseUrl(baseUrl));
   }
-
-  addDomainToMap(domainsMap, parseUrl(process.env.UPTIME_KUMA_BASE_URL || ''));
 
   const iconEnv = getString('KUMA_MIERU_ICON');
   addDomainToMap(domainsMap, parseUrl(iconEnv.value ?? ''));
