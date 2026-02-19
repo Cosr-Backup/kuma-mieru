@@ -281,24 +281,29 @@ docker run -d \
 
 环境变量说明如下（含向后兼容）：
 
-| 变量名                       | 必填  | 说明                                                                            | 示例/默认值                                                                                              |
-| ---------------------------- | ----- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| UPTIME_KUMA_URLS             | Yes\* | 推荐。完整状态页 URL，支持使用 `\|` 分隔多个 URL（可来自不同 Kuma 实例）        | <https://example.kuma-mieru.invalid/status/default\|https://example.kuma-mieru.invalid/status/secondary> |
-| UPTIME_KUMA_BASE_URL         | Yes\* | 兼容旧版。Uptime Kuma 实例基础 URL（当未设置 `UPTIME_KUMA_URLS` 时启用）        | <https://example.kuma-mieru.invalid>                                                                     |
-| PAGE_ID                      | Yes\* | 兼容旧版。状态页 ID，支持逗号分隔多个页面（当未设置 `UPTIME_KUMA_URLS` 时启用） | default,status-asia                                                                                      |
-| KUMA_MIERU_EDIT_THIS_PAGE    | No    | 是否展示 "Edit This Page" 按钮（新变量名）                                      | false                                                                                                    |
-| KUMA_MIERU_SHOW_STAR_BUTTON  | No    | 是否展示 "Star on Github" 按钮（新变量名）                                      | true                                                                                                     |
-| KUMA_MIERU_TITLE             | No    | 自定义页面标题（新变量名）                                                      | Kuma Mieru                                                                                               |
-| KUMA_MIERU_DESCRIPTION       | No    | 自定义页面描述（新变量名）                                                      | A beautiful and modern uptime monitoring dashboard                                                       |
-| KUMA_MIERU_ICON              | No    | 自定义页面图标 URL（新变量名）                                                  | /icon.svg                                                                                                |
-| FEATURE_EDIT_THIS_PAGE       | No    | 兼容旧版，等价于 `KUMA_MIERU_EDIT_THIS_PAGE`                                    | false                                                                                                    |
-| FEATURE_SHOW_STAR_BUTTON     | No    | 兼容旧版，等价于 `KUMA_MIERU_SHOW_STAR_BUTTON`                                  | true                                                                                                     |
-| FEATURE_TITLE                | No    | 兼容旧版，等价于 `KUMA_MIERU_TITLE`                                             | Kuma Mieru                                                                                               |
-| FEATURE_DESCRIPTION          | No    | 兼容旧版，等价于 `KUMA_MIERU_DESCRIPTION`                                       | A beautiful and modern uptime monitoring dashboard                                                       |
-| FEATURE_ICON                 | No    | 兼容旧版，等价于 `KUMA_MIERU_ICON`                                              | /icon.svg                                                                                                |
-| ALLOW_INSECURE_TLS           | No    | 是否跳过上游 Uptime Kuma HTTPS 证书校验（仅用于受信任的自签名环境）             | `false`（默认，强校验） / `true`（跳过校验，有安全风险）                                                 |
-| ALLOW_EMBEDDING              | No    | 是否允许在 iframe 中嵌入（运行时生效，重建镜像后无需重新 build）                | `false` (禁止) / `true` (允许所有，不推荐) / `example.com,app.com` (白名单)                              |
-| STRICT_IMAGE_REMOTE_PATTERNS | No    | 是否启用严格远程图片域名白名单（构建时生效）                                    | `false`（默认，放开所有远程图片域名） / `true`（仅允许 `generate-image-domains` 生成的域名）             |
+| 变量名                          | 必填  | 说明                                                                            | 示例/默认值                                                                                              |
+| ------------------------------- | ----- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| UPTIME_KUMA_URLS                | Yes\* | 推荐。完整状态页 URL，支持使用 `\|` 分隔多个 URL（可来自不同 Kuma 实例）        | <https://example.kuma-mieru.invalid/status/default\|https://example.kuma-mieru.invalid/status/secondary> |
+| UPTIME_KUMA_BASE_URL            | Yes\* | 兼容旧版。Uptime Kuma 实例基础 URL（当未设置 `UPTIME_KUMA_URLS` 时启用）        | <https://example.kuma-mieru.invalid>                                                                     |
+| PAGE_ID                         | Yes\* | 兼容旧版。状态页 ID，支持逗号分隔多个页面（当未设置 `UPTIME_KUMA_URLS` 时启用） | default,status-asia                                                                                      |
+| KUMA_MIERU_EDIT_THIS_PAGE       | No    | 是否展示 "Edit This Page" 按钮（新变量名）                                      | false                                                                                                    |
+| KUMA_MIERU_SHOW_STAR_BUTTON     | No    | 是否展示 "Star on Github" 按钮（新变量名）                                      | true                                                                                                     |
+| KUMA_MIERU_TITLE                | No    | 自定义页面标题（新变量名）                                                      | Kuma Mieru                                                                                               |
+| KUMA_MIERU_DESCRIPTION          | No    | 自定义页面描述（新变量名）                                                      | A beautiful and modern uptime monitoring dashboard                                                       |
+| KUMA_MIERU_ICON                 | No    | 自定义页面图标 URL（新变量名）                                                  | /icon.svg                                                                                                |
+| FEATURE_EDIT_THIS_PAGE          | No    | 兼容旧版，等价于 `KUMA_MIERU_EDIT_THIS_PAGE`                                    | false                                                                                                    |
+| FEATURE_SHOW_STAR_BUTTON        | No    | 兼容旧版，等价于 `KUMA_MIERU_SHOW_STAR_BUTTON`                                  | true                                                                                                     |
+| FEATURE_TITLE                   | No    | 兼容旧版，等价于 `KUMA_MIERU_TITLE`                                             | Kuma Mieru                                                                                               |
+| FEATURE_DESCRIPTION             | No    | 兼容旧版，等价于 `KUMA_MIERU_DESCRIPTION`                                       | A beautiful and modern uptime monitoring dashboard                                                       |
+| FEATURE_ICON                    | No    | 兼容旧版，等价于 `KUMA_MIERU_ICON`                                              | /icon.svg                                                                                                |
+| ALLOW_INSECURE_TLS              | No    | 是否跳过上游 Uptime Kuma HTTPS 证书校验（仅用于受信任的自签名环境）             | `false`（默认，强校验） / `true`（跳过校验，有安全风险）                                                 |
+| REQUEST_TIMEOUT_MS              | No    | 全局上游请求超时（毫秒，默认值 8000）                                           | `8000`                                                                                                   |
+| REQUEST_RETRY_MAX               | No    | 全局上游请求最大重试次数（默认值 3）                                            | `3`                                                                                                      |
+| REQUEST_RETRY_DELAY_MS          | No    | 全局上游请求重试基础间隔（毫秒，默认值 500）                                    | `500`                                                                                                    |
+| SSR_STRICT_MODE                 | No    | 是否启用严格 SSR 失败模式（多页面全部失败时触发全局错误页）                     | `true` / `false` （默认）                                                                                |
+| NEXT_PUBLIC_ERROR_PAGE_DEV_MODE | No    | 是否在错误页显示完整堆栈                                                        | `false`（默认） / `true`                                                                                 |
+| ALLOW_EMBEDDING                 | No    | 是否允许在 iframe 中嵌入（运行时生效，重建镜像后无需重新 build）                | `false` (禁止) / `true` (允许所有，不推荐) / `example.com,app.com` (白名单)                              |
+| STRICT_IMAGE_REMOTE_PATTERNS    | No    | 是否启用严格远程图片域名白名单（构建时生效）                                    | `false`（默认，放开所有远程图片域名） / `true`（仅允许 `generate-image-domains` 生成的域名）             |
 
 \* `UPTIME_KUMA_URLS` 与 `UPTIME_KUMA_BASE_URL + PAGE_ID` 二选一即可。若同时配置，优先使用 `UPTIME_KUMA_URLS`。
 
