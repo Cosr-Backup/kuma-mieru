@@ -98,10 +98,10 @@
     "systemUnknown": "Статус сервисов неизвестен"
   },
   "errorPage": {
-    "title": "Произошла ошибка",
+    "title": "Произошла ошибка!",
     "currentUnavailableTitle": "Эта страница статуса в настоящее время недоступна",
-    "globalTitle": "Система недоступна",
-    "notFoundTitle": "Страница не найдена",
+    "globalTitle": "500 - Система недоступна",
+    "notFoundTitle": "404 - Страница не найдена",
     "diagnostics": "Ниже представлена диагностическая информация об ошибке",
     "httpStatus": "HTTP статус",
     "httpStatusUnavailable": "Нет HTTP ответа",

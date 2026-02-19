@@ -98,10 +98,10 @@
     "systemUnknown": "システム状態を確認できません"
   },
   "errorPage": {
-    "title": "エラーが発生しました",
+    "title": "エラーが発生しました！",
     "currentUnavailableTitle": "このステータスページは現在利用できません",
-    "globalTitle": "システム利用不可",
-    "notFoundTitle": "ページが見つかりません",
+    "globalTitle": "500 - システム利用不可",
+    "notFoundTitle": "404 - ページが見つかりません",
     "diagnostics": "以下はエラー診断情報です",
     "httpStatus": "HTTP ステータス",
     "httpStatusUnavailable": "HTTP 応答なし",

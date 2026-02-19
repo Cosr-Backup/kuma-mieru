@@ -98,10 +98,10 @@
     "systemUnknown": "服務狀態不明"
   },
   "errorPage": {
-    "title": "發生錯誤",
+    "title": "發生錯誤！",
     "currentUnavailableTitle": "目前狀態頁面暫時無法使用",
-    "globalTitle": "系統不可用",
-    "notFoundTitle": "頁面未找到",
+    "globalTitle": "500 - 系統不可用",
+    "notFoundTitle": "404 - 頁面未找到",
     "diagnostics": "以下是錯誤診斷資訊，可用於向開發者回饋問題。",
     "httpStatus": "HTTP 狀態",
     "httpStatusUnavailable": "無 HTTP 回應",
