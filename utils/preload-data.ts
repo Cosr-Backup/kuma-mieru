@@ -1,5 +1,5 @@
-import * as cheerio from 'cheerio';
 import type { CheerioAPI } from 'cheerio';
+import * as cheerio from 'cheerio';
 import type { PreloadData } from '../types/config';
 import { ConfigError } from './errors';
 import { extractPreloadData } from './json-processor';
@@ -51,6 +51,11 @@ export interface ResolvedPreloadData {
   source: ResolvedPreloadSource;
 }
 
+const PRELOAD_SCRIPT_WITH_ID_REGEX =
+  /<script\b([^>]*\bid\s*=\s*(['"])preload-data\2[^>]*)>([\s\S]*?)<\/script>/i;
+const DATA_JSON_ATTR_REGEX = /\bdata-json\s*=\s*("([^"]*)"|'([^']*)')/i;
+const LEGACY_PRELOAD_REGEX = /window\.preloadData\s*=\s*({[\s\S]*?});/;
+
 function normalizeHeaders(headers?: HeadersInit): Record<string, string> {
   if (!headers) {
     return {};
@@ -72,6 +77,65 @@ function ensureAcceptHeader(headers: Record<string, string>) {
   if (!hasAcceptHeader) {
     headers.Accept = 'application/json';
   }
+}
+
+function decodeHtmlEntities(value: string): string {
+  return value.replace(/&(?:quot|apos|amp|lt|gt|#39|#x27|#(\d+)|#x([0-9a-fA-F]+));/g, match => {
+    switch (match) {
+      case '&quot;':
+        return '"';
+      case '&apos;':
+      case '&#39;':
+      case '&#x27;':
+        return "'";
+      case '&amp;':
+        return '&';
+      case '&lt;':
+        return '<';
+      case '&gt;':
+        return '>';
+      default: {
+        const decimalMatch = match.match(/^&#(\d+);$/);
+        if (decimalMatch?.[1]) {
+          const codePoint = Number.parseInt(decimalMatch[1], 10);
+          return Number.isNaN(codePoint) ? match : String.fromCodePoint(codePoint);
+        }
+
+        const hexMatch = match.match(/^&#x([0-9a-fA-F]+);$/);
+        if (hexMatch?.[1]) {
+          const codePoint = Number.parseInt(hexMatch[1], 16);
+          return Number.isNaN(codePoint) ? match : String.fromCodePoint(codePoint);
+        }
+
+        return match;
+      }
+    }
+  });
+}
+
+function getPreloadPayloadFromHtmlFast(html: string): PreloadExtractionResult {
+  const match = html.match(PRELOAD_SCRIPT_WITH_ID_REGEX);
+  if (!match) {
+    return { payload: null, source: null };
+  }
+
+  const attributes = match[1] ?? '';
+  const scriptContent = match[3]?.trim() ?? '';
+
+  if (scriptContent) {
+    return { payload: scriptContent, source: 'script' };
+  }
+
+  const dataJsonMatch = attributes.match(DATA_JSON_ATTR_REGEX);
+  if (dataJsonMatch) {
+    const encodedDataJson = dataJsonMatch[2] ?? dataJsonMatch[3] ?? '';
+    const dataJson = decodeHtmlEntities(encodedDataJson).trim();
+    if (dataJson && dataJson !== '{}' && dataJson !== '[]') {
+      return { payload: dataJson, source: 'data-json' };
+    }
+  }
+
+  return { payload: null, source: null };
 }
 
 export function getPreloadPayload($: CheerioAPI): PreloadExtractionResult {
@@ -120,6 +184,26 @@ function parsePreloadPayload(payload: string): PreloadData {
   }
 }
 
+function tryResolvePayload(
+  payload: string,
+  source: ResolvedPreloadSource,
+  logger: PreloadLogger,
+  strategy: 'fast-path' | 'cheerio'
+): ResolvedPreloadData | null {
+  try {
+    return {
+      data: parsePreloadPayload(payload),
+      source,
+    };
+  } catch (error) {
+    logger.debug?.(
+      `Failed to parse preload payload in ${strategy}, fallback to next strategy`,
+      error
+    );
+    return null;
+  }
+}
+
 function extractLegacyPreloadPayload($: CheerioAPI, logger: PreloadLogger): string | null {
   const scriptWithPreloadData = $('script:contains("window.preloadData")').text();
   if (!scriptWithPreloadData) {
@@ -140,6 +224,15 @@ function extractLegacyPreloadPayload($: CheerioAPI, logger: PreloadLogger): stri
   return null;
 }
 
+function extractLegacyPreloadPayloadFromHtmlFast(html: string): string | null {
+  const match = html.match(LEGACY_PRELOAD_REGEX);
+  if (match && match[1]) {
+    return match[1];
+  }
+
+  return null;
+}
+
 export async function resolvePreloadDataFromHtml({
   html,
   baseUrl,
@@ -149,29 +242,62 @@ export async function resolvePreloadDataFromHtml({
   logger = console,
   includeHtmlDiagnostics = false,
 }: ResolvePreloadDataFromHtmlOptions): Promise<ResolvedPreloadData> {
-  const $ = cheerio.load(html);
-  const { payload: initialPayload, source } = getPreloadPayload($);
+  const fastPreload = getPreloadPayloadFromHtmlFast(html);
+  if (fastPreload.payload) {
+    if (fastPreload.source === 'data-json') {
+      logger.debug?.('Using preload data from data-json attribute (fast path)');
+    }
 
-  let payload = initialPayload?.trim() ?? '';
-  let resolvedSource: ResolvedPreloadSource | null = source;
-
-  if (source === 'data-json') {
-    logger.debug?.('Using preload data from data-json attribute');
-  }
-
-  if (!payload) {
-    const legacyPayload = extractLegacyPreloadPayload($, logger);
-    if (legacyPayload) {
-      payload = legacyPayload;
-      resolvedSource = 'legacy-window-preload';
+    const resolvedFastPreload = tryResolvePayload(
+      fastPreload.payload,
+      fastPreload.source ?? 'script',
+      logger,
+      'fast-path'
+    );
+    if (resolvedFastPreload) {
+      return resolvedFastPreload;
     }
   }
 
-  if (payload) {
+  const fastLegacyPayload = extractLegacyPreloadPayloadFromHtmlFast(html);
+  if (fastLegacyPayload) {
+    logger.info?.('Successfully extracted preload data from window.preloadData (fast path)');
+    const resolvedFastLegacy = tryResolvePayload(
+      fastLegacyPayload,
+      'legacy-window-preload',
+      logger,
+      'fast-path'
+    );
+    if (resolvedFastLegacy) {
+      return resolvedFastLegacy;
+    }
+  }
+
+  const $ = cheerio.load(html);
+  const { payload: cheerioPayload, source: cheerioSource } = getPreloadPayload($);
+
+  if (cheerioPayload) {
+    if (cheerioSource === 'data-json') {
+      logger.debug?.('Using preload data from data-json attribute');
+    }
+
     return {
-      data: parsePreloadPayload(payload),
-      source: resolvedSource ?? 'legacy-window-preload',
+      data: parsePreloadPayload(cheerioPayload),
+      source: cheerioSource ?? 'script',
     };
+  }
+
+  const legacyPayload = extractLegacyPreloadPayload($, logger);
+  if (legacyPayload) {
+    const resolvedLegacy = tryResolvePayload(
+      legacyPayload,
+      'legacy-window-preload',
+      logger,
+      'cheerio'
+    );
+    if (resolvedLegacy) {
+      return resolvedLegacy;
+    }
   }
 
   logger.warn?.('Preload script missing, attempting status page API fallback');
