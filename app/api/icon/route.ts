@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { getConfig } from '@/config/api';
 import { getUpstreamIconUrl } from '@/services/config.server';
 import { customFetch } from '@/services/utils/fetch';
@@ -8,6 +10,17 @@ export const runtime = 'nodejs';
 
 const FALLBACK_ICON = '/icon.svg';
 const MAX_ICON_SIZE = 2 * 1024 * 1024; // 2MB
+const FALLBACK_ICON_PATH = join(process.cwd(), 'public', 'icon.svg');
+const FALLBACK_ICON_CACHE_CONTROL = 'public, max-age=300, s-maxage=300, stale-while-revalidate=600';
+const FALLBACK_ICON_DATA = readFile(FALLBACK_ICON_PATH)
+  .then(data => new Uint8Array(data))
+  .catch(error => {
+    console.error('Failed to load fallback icon from disk', {
+      path: FALLBACK_ICON_PATH,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  });
 
 function resolveUpstreamIconUrl(icon: string, baseUrl: string): string | null {
   if (!icon || icon === FALLBACK_ICON || icon.startsWith('data:')) return null;
@@ -26,8 +39,19 @@ function resolveUpstreamIconUrl(icon: string, baseUrl: string): string | null {
   return `${normalizedBaseUrl}/${icon.replace(/^\/+/, '')}`;
 }
 
-function fallback(request: Request): NextResponse {
-  return NextResponse.redirect(new URL(FALLBACK_ICON, request.url), 307);
+async function fallback(): Promise<NextResponse> {
+  const data = await FALLBACK_ICON_DATA;
+  if (!data) {
+    return new NextResponse(null, { status: 404, headers: { 'Cache-Control': 'no-store' } });
+  }
+
+  return new NextResponse(data, {
+    status: 200,
+    headers: {
+      'Content-Type': 'image/svg+xml',
+      'Cache-Control': FALLBACK_ICON_CACHE_CONTROL,
+    },
+  });
 }
 
 export async function GET(request: Request) {
@@ -36,18 +60,18 @@ export async function GET(request: Request) {
 
   const pageConfig = getConfig(requestedPageId) ?? getConfig();
   if (!pageConfig) {
-    return fallback(request);
+    return fallback();
   }
 
   try {
     const icon = await getUpstreamIconUrl(pageConfig);
     if (!icon) {
-      return fallback(request);
+      return fallback();
     }
 
     const targetUrl = resolveUpstreamIconUrl(icon, pageConfig.baseUrl);
     if (!targetUrl) {
-      return fallback(request);
+      return fallback();
     }
 
     const upstreamResponse = await customFetch(targetUrl, {
@@ -56,22 +80,22 @@ export async function GET(request: Request) {
     });
 
     if (!upstreamResponse.ok) {
-      return fallback(request);
+      return fallback();
     }
 
     const contentType = upstreamResponse.headers['content-type'] || '';
     if (!contentType.startsWith('image/')) {
-      return fallback(request);
+      return fallback();
     }
 
     const contentLength = Number(upstreamResponse.headers['content-length'] || '0');
     if (contentLength > MAX_ICON_SIZE) {
-      return fallback(request);
+      return fallback();
     }
 
     const data = await upstreamResponse.arrayBuffer();
     if (data.byteLength > MAX_ICON_SIZE) {
-      return fallback(request);
+      return fallback();
     }
 
     return new NextResponse(data, {
@@ -86,6 +110,6 @@ export async function GET(request: Request) {
       pageId: pageConfig.pageId,
       error: error instanceof Error ? error.message : String(error),
     });
-    return fallback(request);
+    return fallback();
   }
 }
