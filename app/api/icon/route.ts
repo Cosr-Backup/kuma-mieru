@@ -22,6 +22,24 @@ const FALLBACK_ICON_DATA = readFile(FALLBACK_ICON_PATH)
     return null;
   });
 
+function getConfiguredIconFromEnv(): string | null {
+  const raw = process.env.KUMA_MIERU_ICON ?? process.env.FEATURE_ICON;
+  if (raw === undefined) return null;
+
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  const startsWithQuote = trimmed.startsWith('"') || trimmed.startsWith("'");
+  const endsWithQuote = trimmed.endsWith('"') || trimmed.endsWith("'");
+
+  if (startsWithQuote && endsWithQuote && trimmed.length >= 2) {
+    const unquoted = trimmed.slice(1, -1).trim();
+    return unquoted || null;
+  }
+
+  return trimmed;
+}
+
 function resolveUpstreamIconUrl(icon: string, baseUrl: string): string | null {
   if (!icon || icon === FALLBACK_ICON || icon.startsWith('data:')) return null;
 
@@ -64,7 +82,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const icon = await getUpstreamIconUrl(pageConfig);
+    const icon = getConfiguredIconFromEnv() ?? (await getUpstreamIconUrl(pageConfig));
     if (!icon) {
       return fallback();
     }
