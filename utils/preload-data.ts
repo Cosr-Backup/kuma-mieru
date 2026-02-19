@@ -1,9 +1,13 @@
 import type { CheerioAPI } from 'cheerio';
+import * as cheerio from 'cheerio';
 import type { PreloadData } from '../types/config';
 import { ConfigError } from './errors';
-import { validatePreloadData } from './json-sanitizer';
+import { extractPreloadData } from './json-processor';
+import { sanitizeJsonString, validatePreloadData } from './json-sanitizer';
+import { normalizeBaseUrl } from './url';
 
 type PreloadSource = 'script' | 'data-json';
+type ResolvedPreloadSource = PreloadSource | 'legacy-window-preload' | 'api-fallback';
 
 type MinimalResponse = {
   ok: boolean;
@@ -29,6 +33,29 @@ export interface ApiPreloadResult {
   url: string;
 }
 
+export interface PreloadLogger {
+  debug?: (...args: unknown[]) => void;
+  info?: (...args: unknown[]) => void;
+  warn?: (...args: unknown[]) => void;
+  error?: (...args: unknown[]) => void;
+}
+
+export interface ResolvePreloadDataFromHtmlOptions extends FetchPreloadDataOptions {
+  html: string;
+  logger?: PreloadLogger;
+  includeHtmlDiagnostics?: boolean;
+}
+
+export interface ResolvedPreloadData {
+  data: PreloadData;
+  source: ResolvedPreloadSource;
+}
+
+const PRELOAD_SCRIPT_WITH_ID_REGEX =
+  /<script\b([^>]*\bid\s*=\s*(['"])preload-data\2[^>]*)>([\s\S]*?)<\/script>/i;
+const DATA_JSON_ATTR_REGEX = /\bdata-json\s*=\s*("([^"]*)"|'([^']*)')/i;
+const LEGACY_PRELOAD_REGEX = /window\.preloadData\s*=\s*({[\s\S]*?});/;
+
 function normalizeHeaders(headers?: HeadersInit): Record<string, string> {
   if (!headers) {
     return {};
@@ -52,8 +79,63 @@ function ensureAcceptHeader(headers: Record<string, string>) {
   }
 }
 
-function normalizeBaseUrl(baseUrl: string): string {
-  return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+function decodeHtmlEntities(value: string): string {
+  return value.replace(/&(?:quot|apos|amp|lt|gt|#39|#x27|#(\d+)|#x([0-9a-fA-F]+));/g, match => {
+    switch (match) {
+      case '&quot;':
+        return '"';
+      case '&apos;':
+      case '&#39;':
+      case '&#x27;':
+        return "'";
+      case '&amp;':
+        return '&';
+      case '&lt;':
+        return '<';
+      case '&gt;':
+        return '>';
+      default: {
+        const decimalMatch = match.match(/^&#(\d+);$/);
+        if (decimalMatch?.[1]) {
+          const codePoint = Number.parseInt(decimalMatch[1], 10);
+          return Number.isNaN(codePoint) ? match : String.fromCodePoint(codePoint);
+        }
+
+        const hexMatch = match.match(/^&#x([0-9a-fA-F]+);$/);
+        if (hexMatch?.[1]) {
+          const codePoint = Number.parseInt(hexMatch[1], 16);
+          return Number.isNaN(codePoint) ? match : String.fromCodePoint(codePoint);
+        }
+
+        return match;
+      }
+    }
+  });
+}
+
+function getPreloadPayloadFromHtmlFast(html: string): PreloadExtractionResult {
+  const match = html.match(PRELOAD_SCRIPT_WITH_ID_REGEX);
+  if (!match) {
+    return { payload: null, source: null };
+  }
+
+  const attributes = match[1] ?? '';
+  const scriptContent = match[3]?.trim() ?? '';
+
+  if (scriptContent) {
+    return { payload: scriptContent, source: 'script' };
+  }
+
+  const dataJsonMatch = attributes.match(DATA_JSON_ATTR_REGEX);
+  if (dataJsonMatch) {
+    const encodedDataJson = dataJsonMatch[2] ?? dataJsonMatch[3] ?? '';
+    const dataJson = decodeHtmlEntities(encodedDataJson).trim();
+    if (dataJson && dataJson !== '{}' && dataJson !== '[]') {
+      return { payload: dataJson, source: 'data-json' };
+    }
+  }
+
+  return { payload: null, source: null };
 }
 
 export function getPreloadPayload($: CheerioAPI): PreloadExtractionResult {
@@ -77,6 +159,176 @@ export function getPreloadPayload($: CheerioAPI): PreloadExtractionResult {
   }
 
   return { payload: null, source: null };
+}
+
+function parsePreloadPayload(payload: string): PreloadData {
+  try {
+    const jsonStr = sanitizeJsonString(payload);
+    return extractPreloadData(jsonStr);
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new ConfigError(
+        `JSON parsing failed: ${error.message}\nProcessed data: ${payload.slice(0, 100)}...`,
+        error
+      );
+    }
+
+    if (error instanceof ConfigError) {
+      throw error;
+    }
+
+    throw new ConfigError(
+      `Failed to parse preload data: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      error
+    );
+  }
+}
+
+function tryResolvePayload(
+  payload: string,
+  source: ResolvedPreloadSource,
+  logger: PreloadLogger,
+  strategy: 'fast-path' | 'cheerio'
+): ResolvedPreloadData | null {
+  try {
+    return {
+      data: parsePreloadPayload(payload),
+      source,
+    };
+  } catch (error) {
+    logger.debug?.(
+      `Failed to parse preload payload in ${strategy}, fallback to next strategy`,
+      error
+    );
+    return null;
+  }
+}
+
+function extractLegacyPreloadPayload($: CheerioAPI, logger: PreloadLogger): string | null {
+  const scriptWithPreloadData = $('script:contains("window.preloadData")').text();
+  if (!scriptWithPreloadData) {
+    return null;
+  }
+
+  const match = scriptWithPreloadData.match(/window\.preloadData\s*=\s*({[\s\S]*?});/);
+  if (match && match[1]) {
+    logger.info?.('Successfully extracted preload data from window.preloadData');
+    return match[1];
+  }
+
+  logger.error?.(
+    'Failed to extract preload data with regex. Script content:',
+    scriptWithPreloadData.slice(0, 200)
+  );
+
+  return null;
+}
+
+function extractLegacyPreloadPayloadFromHtmlFast(html: string): string | null {
+  const match = html.match(LEGACY_PRELOAD_REGEX);
+  if (match && match[1]) {
+    return match[1];
+  }
+
+  return null;
+}
+
+export async function resolvePreloadDataFromHtml({
+  html,
+  baseUrl,
+  pageId,
+  fetchFn,
+  requestInit,
+  logger = console,
+  includeHtmlDiagnostics = false,
+}: ResolvePreloadDataFromHtmlOptions): Promise<ResolvedPreloadData> {
+  const fastPreload = getPreloadPayloadFromHtmlFast(html);
+  if (fastPreload.payload) {
+    if (fastPreload.source === 'data-json') {
+      logger.debug?.('Using preload data from data-json attribute (fast path)');
+    }
+
+    const resolvedFastPreload = tryResolvePayload(
+      fastPreload.payload,
+      fastPreload.source ?? 'script',
+      logger,
+      'fast-path'
+    );
+    if (resolvedFastPreload) {
+      return resolvedFastPreload;
+    }
+  }
+
+  const fastLegacyPayload = extractLegacyPreloadPayloadFromHtmlFast(html);
+  if (fastLegacyPayload) {
+    logger.info?.('Successfully extracted preload data from window.preloadData (fast path)');
+    const resolvedFastLegacy = tryResolvePayload(
+      fastLegacyPayload,
+      'legacy-window-preload',
+      logger,
+      'fast-path'
+    );
+    if (resolvedFastLegacy) {
+      return resolvedFastLegacy;
+    }
+  }
+
+  const $ = cheerio.load(html);
+  const { payload: cheerioPayload, source: cheerioSource } = getPreloadPayload($);
+
+  if (cheerioPayload) {
+    if (cheerioSource === 'data-json') {
+      logger.debug?.('Using preload data from data-json attribute');
+    }
+
+    return {
+      data: parsePreloadPayload(cheerioPayload),
+      source: cheerioSource ?? 'script',
+    };
+  }
+
+  const legacyPayload = extractLegacyPreloadPayload($, logger);
+  if (legacyPayload) {
+    const resolvedLegacy = tryResolvePayload(
+      legacyPayload,
+      'legacy-window-preload',
+      logger,
+      'cheerio'
+    );
+    if (resolvedLegacy) {
+      return resolvedLegacy;
+    }
+  }
+
+  logger.warn?.('Preload script missing, attempting status page API fallback');
+
+  try {
+    const apiFallback = await fetchPreloadDataFromApi({
+      baseUrl,
+      pageId,
+      fetchFn,
+      requestInit,
+    });
+    logger.info?.('Using status page API fallback for preload data', { url: apiFallback.url });
+    return {
+      data: apiFallback.data,
+      source: 'api-fallback',
+    };
+  } catch (apiError) {
+    logger.error?.('Status page API fallback failed:', apiError);
+  }
+
+  if (includeHtmlDiagnostics) {
+    logger.error?.('HTML response preview:', html.slice(0, 500));
+    logger.error?.(
+      'Available script tags:',
+      $('script')
+        .map((_, el) => $(el).attr('id') || 'no-id')
+        .get()
+    );
+  }
+
+  throw new ConfigError('Preload script tag not found or empty');
 }
 
 export async function fetchPreloadDataFromApi({

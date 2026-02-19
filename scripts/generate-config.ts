@@ -1,46 +1,18 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import * as cheerio from 'cheerio';
-import { z } from 'zod';
-import { extractPreloadData } from '../utils/json-processor';
-import { sanitizeJsonString } from '../utils/json-sanitizer';
-import { fetchPreloadDataFromApi, getPreloadPayload } from '../utils/preload-data';
-import type { PreloadData } from '../types/config';
+import {
+  DEFAULT_SITE_ICON,
+  DEFAULT_SITE_META as DEFAULT_SITE_META_VALUES,
+} from '../config/defaults';
+import { generatedConfigSchema, siteMetaSchema } from '../config/schemas';
+import type { SiteMeta } from '../config/schemas';
+import { resolvePreloadDataFromHtml } from '../utils/preload-data';
 import { getString, getBooleanWithSource, formatResolved } from './lib/env';
 import { resolveEndpointConfig } from './lib/uptime-kuma';
 
 import 'dotenv/config';
 
-const DEFAULT_SITE_TITLE = 'Kuma Mieru';
-const DEFAULT_SITE_DESCRIPTION = 'A beautiful and modern uptime monitoring dashboard';
-const DEFAULT_SITE_ICON = '/icon.svg';
-
-const siteMetaSchema = z.object({
-  title: z.string().default(DEFAULT_SITE_TITLE),
-  description: z.string().default(DEFAULT_SITE_DESCRIPTION),
-  icon: z.string().default(DEFAULT_SITE_ICON),
-  iconCandidates: z.array(z.string()).min(1).default([DEFAULT_SITE_ICON]),
-});
-const DEFAULT_SITE_META = siteMetaSchema.parse({});
-
-const pageConfigSchema = z.object({
-  id: z.string(),
-  baseUrl: z.string().url(),
-  siteMeta: siteMetaSchema,
-});
-
-const configSchema = z.object({
-  baseUrl: z.string().url(),
-  pageId: z.string(),
-  pageIds: z.array(z.string()).min(1),
-  pages: z.array(pageConfigSchema).min(1),
-  siteMeta: siteMetaSchema,
-  isPlaceholder: z.boolean().default(false),
-  isEditThisPage: z.boolean().default(false),
-  isShowStarButton: z.boolean().default(true),
-});
-
-type SiteMeta = z.infer<typeof siteMetaSchema>;
+const DEFAULT_SITE_META = siteMetaSchema.parse(DEFAULT_SITE_META_VALUES);
 
 interface StringOverride {
   value: string | undefined;
@@ -146,39 +118,13 @@ async function fetchSiteMeta(baseUrl: string, pageId: string) {
     }
 
     const html = await response.text();
-    const $ = cheerio.load(html);
-    const { payload, source } = getPreloadPayload($);
-    let preloadSource = payload;
-    let preloadData: PreloadData | null = null;
-
-    if (!preloadSource) {
-      const legacyScript = $('script:contains("window.preloadData")').text();
-      if (legacyScript) {
-        const match = legacyScript.match(/window\.preloadData\s*=\s*({[\s\S]*?});/);
-        if (match && match[1]) {
-          preloadSource = match[1];
-          console.log('Fallback to window.preloadData script for site meta extraction');
-        }
-      }
-    }
-
-    if (preloadSource) {
-      if (source === 'data-json') {
-        console.log('Using preload data from data-json attribute for site meta');
-      }
-
-      const jsonStr = sanitizeJsonString(preloadSource);
-      preloadData = extractPreloadData(jsonStr);
-    } else {
-      console.log('Preload data not found in HTML, attempting status page API fallback');
-      const apiFallback = await fetchPreloadDataFromApi({ baseUrl, pageId });
-      console.log(`Using status page API fallback from ${apiFallback.url}`);
-      preloadData = apiFallback.data;
-    }
-
-    if (!preloadData) {
-      throw new Error('Failed to resolve preload data from HTML or API');
-    }
+    const { data: preloadData } = await resolvePreloadDataFromHtml({
+      html,
+      baseUrl,
+      pageId,
+      logger: console,
+      includeHtmlDiagnostics: true,
+    });
 
     const remoteMeta: Partial<Pick<SiteMeta, 'title' | 'description' | 'icon'>> = {
       title: preloadData.config.title ?? undefined,
@@ -215,7 +161,7 @@ async function fetchSiteMeta(baseUrl: string, pageId: string) {
       return resolveSiteMeta({ overrides });
     }
 
-    return siteMetaSchema.parse({});
+    return siteMetaSchema.parse(DEFAULT_SITE_META);
   }
 }
 
@@ -256,7 +202,7 @@ async function generateConfig() {
     const pageConfigEntries = [] as Array<{
       id: string;
       baseUrl: string;
-      siteMeta: z.infer<typeof siteMetaSchema>;
+      siteMeta: SiteMeta;
     }>;
 
     for (const page of pageEndpoints) {
@@ -272,7 +218,7 @@ async function generateConfig() {
         pageConfigEntries.push({
           id: page.id,
           baseUrl: page.baseUrl,
-          siteMeta: siteMetaSchema.parse({}),
+          siteMeta: siteMetaSchema.parse(DEFAULT_SITE_META),
         });
       }
     }
@@ -283,7 +229,7 @@ async function generateConfig() {
       throw new Error(`Unable to resolve site metadata for default page "${defaultPageId}"`);
     }
 
-    const config = configSchema.parse({
+    const config = generatedConfigSchema.parse({
       baseUrl,
       pageId: defaultPageId,
       pageIds,

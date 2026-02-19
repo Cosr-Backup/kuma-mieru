@@ -4,6 +4,7 @@ import type { Metadata, Viewport } from 'next';
 
 import Analytics from '@/components/basic/google-analytics';
 import { fontMono, fontSans } from '@/config/fonts';
+import { DEFAULT_SITE_DESCRIPTION, DEFAULT_SITE_ICON, DEFAULT_SITE_TITLE } from '@/config/defaults';
 import { getConfig } from '@/config/api';
 import packageJson from '@/package.json';
 import { getGlobalConfig } from '@/services/config.server';
@@ -13,9 +14,9 @@ import { Providers } from './providers';
 
 import { Toaster } from 'sonner';
 
-const DEFAULT_TITLE = 'Kuma Mieru';
-const DEFAULT_DESCRIPTION = 'A beautiful and modern uptime monitoring dashboard';
-const DEFAULT_ICON = '/icon.svg';
+const DEFAULT_TITLE = DEFAULT_SITE_TITLE;
+const DEFAULT_DESCRIPTION = DEFAULT_SITE_DESCRIPTION;
+const DEFAULT_ICON = DEFAULT_SITE_ICON;
 
 export const dynamic = 'force-dynamic';
 

@@ -1,10 +1,11 @@
+import { DEFAULT_SITE_DESCRIPTION, DEFAULT_SITE_ICON, DEFAULT_SITE_TITLE } from './defaults';
 import { env } from './env';
 import { buildIconProxyUrl } from '@/utils/icon-proxy';
 
 const baseConfig = {
-  name: 'Kuma Mieru',
-  description: 'A beautiful and modern uptime monitoring dashboard',
-  icon: '/icon.svg',
+  name: DEFAULT_SITE_TITLE,
+  description: DEFAULT_SITE_DESCRIPTION,
+  icon: DEFAULT_SITE_ICON,
 } as const;
 
 interface NavItem {

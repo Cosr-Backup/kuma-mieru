@@ -2,11 +2,8 @@ import { getConfig } from '@/config/api';
 import type { Config, GlobalConfig, Maintenance } from '@/types/config';
 import type { PageTabMeta } from '@/types/page';
 import { ConfigError } from '@/utils/errors';
-import { extractPreloadData } from '@/utils/json-processor';
-import { sanitizeJsonString } from '@/utils/json-sanitizer';
 import { buildIconProxyUrl } from '@/utils/icon-proxy';
-import { fetchPreloadDataFromApi, getPreloadPayload } from '@/utils/preload-data';
-import * as cheerio from 'cheerio';
+import { resolvePreloadDataFromHtml } from '@/utils/preload-data';
 import { cache } from 'react';
 import { ApiDataError, logApiError } from './utils/api-service';
 import { customFetchOptions, ensureUTCTimezone } from './utils/common';
@@ -250,85 +247,21 @@ export async function getPreloadData(config: Config) {
     }
 
     const html = await htmlResponse.text();
-    const $ = cheerio.load(html);
+    const resolved = await resolvePreloadDataFromHtml({
+      html,
+      baseUrl: config.baseUrl,
+      pageId: config.pageId,
+      fetchFn: (url, init) =>
+        customFetch(
+          url,
+          init as RequestInit & { maxRetries?: number; retryDelay?: number; timeout?: number }
+        ),
+      requestInit: customFetchOptions,
+      logger: console,
+      includeHtmlDiagnostics: true,
+    });
 
-    // Uptime Kuma version > 1.18.4, use script#preload-data to get preload data
-    // @see https://github.com/louislam/uptime-kuma/commit/6e07ed20816969bfd1c6c06eb518171938312782
-    // & https://github.com/louislam/uptime-kuma/issues/2186#issuecomment-1270471470
-    const { payload: initialPayload, source } = getPreloadPayload($);
-    let preloadScript = initialPayload ?? '';
-
-    if (source === 'data-json') {
-      console.debug('Using preload data from data-json attribute');
-    }
-
-    if (!preloadScript || preloadScript.trim() === '') {
-      // Uptime Kuma version <= 1.18.4, use script:contains("window.preloadData") to get preload data
-      const scriptWithPreloadData = $('script:contains("window.preloadData")').text();
-
-      if (scriptWithPreloadData) {
-        const match = scriptWithPreloadData.match(/window\.preloadData\s*=\s*({[\s\S]*?});/);
-        if (match && match[1]) {
-          preloadScript = match[1];
-          console.log('Successfully extracted preload data from window.preloadData');
-        } else {
-          console.error(
-            'Failed to extract preload data with regex. Script content:',
-            scriptWithPreloadData.slice(0, 200)
-          );
-        }
-      }
-    }
-
-    if (!preloadScript || preloadScript.trim() === '') {
-      console.warn('Preload script missing, attempting status page API fallback');
-      try {
-        const apiFallback = await fetchPreloadDataFromApi({
-          baseUrl: config.baseUrl,
-          pageId: config.pageId,
-          fetchFn: (url, init) =>
-            customFetch(
-              url,
-              init as RequestInit & { maxRetries?: number; retryDelay?: number; timeout?: number }
-            ),
-          requestInit: customFetchOptions,
-        });
-        console.info('Using status page API fallback for preload data');
-        return apiFallback.data;
-      } catch (apiError) {
-        console.error('Status page API fallback failed:', apiError);
-      }
-    }
-
-    if (!preloadScript || preloadScript.trim() === '') {
-      console.error('HTML response preview:', html.slice(0, 500));
-      console.error(
-        'Available script tags:',
-        $('script')
-          .map((i, el) => $(el).attr('id') || 'no-id')
-          .get()
-      );
-      throw new ConfigError('Preload script tag not found or empty');
-    }
-
-    try {
-      const jsonStr = sanitizeJsonString(preloadScript);
-      return extractPreloadData(jsonStr);
-    } catch (error) {
-      if (error instanceof SyntaxError) {
-        throw new ConfigError(
-          `JSON parsing failed: ${error.message}\nProcessed data: ${preloadScript.slice(0, 100)}...`,
-          error
-        );
-      }
-      if (error instanceof ConfigError) {
-        throw error;
-      }
-      throw new ConfigError(
-        `Failed to parse preload data: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        error
-      );
-    }
+    return resolved.data;
   } catch (error) {
     if (error instanceof ConfigError) {
       throw error;

@@ -4,11 +4,9 @@
  * Used by both generate-config.ts and generate-image-domains.ts.
  */
 
-const STATUS_SEGMENT = 'status';
+import { normalizeBaseUrl } from '../../utils/url';
 
-export function normalizeBaseUrl(value: string): string {
-  return value.replace(/\/+$/, '');
-}
+const STATUS_SEGMENT = 'status';
 
 export function parseStatusPageUrl(rawUrl: string): { baseUrl: string; pageId: string } {
   let parsed: URL;
