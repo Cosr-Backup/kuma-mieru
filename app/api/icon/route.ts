@@ -22,19 +22,18 @@ const FALLBACK_ICON_DATA = readFile(FALLBACK_ICON_PATH)
     return null;
   });
 
-function getConfiguredIconFromEnv(): string | null {
-  const raw = process.env.KUMA_MIERU_ICON ?? process.env.FEATURE_ICON;
-  if (raw === undefined) return null;
+function normalizeIconValue(icon: string | null | undefined): string | null {
+  if (typeof icon !== 'string') return null;
 
-  const trimmed = raw.trim();
+  const trimmed = icon.trim();
   if (!trimmed) return null;
 
-  const startsWithQuote = trimmed.startsWith('"') || trimmed.startsWith("'");
-  const endsWithQuote = trimmed.endsWith('"') || trimmed.endsWith("'");
+  const isWrappedByDoubleQuotes = trimmed.startsWith('"') && trimmed.endsWith('"');
+  const isWrappedBySingleQuotes = trimmed.startsWith("'") && trimmed.endsWith("'");
 
-  if (startsWithQuote && endsWithQuote && trimmed.length >= 2) {
-    const unquoted = trimmed.slice(1, -1).trim();
-    return unquoted || null;
+  if ((isWrappedByDoubleQuotes || isWrappedBySingleQuotes) && trimmed.length >= 2) {
+    const unwrapped = trimmed.slice(1, -1).trim();
+    return unwrapped || null;
   }
 
   return trimmed;
@@ -82,7 +81,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    const icon = getConfiguredIconFromEnv() ?? (await getUpstreamIconUrl(pageConfig));
+    const icon =
+      normalizeIconValue(pageConfig.siteMeta.icon) ??
+      normalizeIconValue(await getUpstreamIconUrl(pageConfig));
     if (!icon) {
       return fallback();
     }
