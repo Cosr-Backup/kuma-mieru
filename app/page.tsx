@@ -1,9 +1,16 @@
+import { buildStatusPageMetadata } from '@/app/lib/site-metadata';
 import { PageConfigProvider } from '@/components/context/PageConfigContext';
 import { AppShell } from '@/components/layout/AppShell';
 import { StatusPage } from '@/components/status/StatusPage';
 import { assertPageAvailability } from '@/app/lib/page-health';
 import { getConfig, toPublicConfig } from '@/config/api';
 import { getGlobalConfig, getPageTabsMetadataResult } from '@/services/config.server';
+import type { Metadata } from 'next';
+
+export function generateMetadata(): Metadata {
+  const pageConfig = getConfig();
+  return buildStatusPageMetadata(pageConfig);
+}
 
 export default async function HomePage() {
   const pageConfig = getConfig();
