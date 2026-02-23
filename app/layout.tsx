@@ -3,51 +3,19 @@ import { clsx } from 'clsx';
 import type { Metadata, Viewport } from 'next';
 
 import Analytics from '@/components/basic/google-analytics';
+import { buildDefaultMetadata } from '@/app/lib/site-metadata';
 import { fontMono, fontSans } from '@/config/fonts';
-import { DEFAULT_SITE_DESCRIPTION, DEFAULT_SITE_ICON, DEFAULT_SITE_TITLE } from '@/config/defaults';
-import { getConfig } from '@/config/api';
-import packageJson from '@/package.json';
 import { getGlobalConfig, getPageTabsMetadataResult } from '@/services/config.server';
 import { isSsrStrictMode } from '@/services/utils/common';
-import { buildIconProxyUrl } from '@/utils/icon-proxy';
 import { getLocale, getMessages } from 'next-intl/server';
 import { Providers } from './providers';
 import { assertGlobalAvailability } from './lib/page-health';
 
 import { Toaster } from 'sonner';
 
-const DEFAULT_TITLE = DEFAULT_SITE_TITLE;
-const DEFAULT_DESCRIPTION = DEFAULT_SITE_DESCRIPTION;
-const DEFAULT_ICON = DEFAULT_SITE_ICON;
-
 export const dynamic = 'force-dynamic';
 
-export function generateMetadata(): Metadata {
-  const config = getConfig();
-  const resolvedTitle = config?.siteMeta.title?.trim() || DEFAULT_TITLE;
-  const resolvedDescription = config?.siteMeta.description?.trim() || DEFAULT_DESCRIPTION;
-  const resolvedIcons =
-    config?.pageIds && config.pageIds.length > 0
-      ? config.pageIds.map(pageId => buildIconProxyUrl(pageId))
-      : [DEFAULT_ICON];
-
-  return {
-    title: {
-      default: resolvedTitle,
-      template: `%s - ${resolvedTitle}`,
-    },
-    description: resolvedDescription,
-    icons: {
-      icon: resolvedIcons,
-    },
-    generator: `https://github.com/Alice39s/kuma-mieru v${packageJson.version}`,
-    formatDetection: {
-      email: false,
-      address: false,
-      telephone: false,
-    },
-  };
-}
+export const metadata: Metadata = buildDefaultMetadata();
 
 export const viewport: Viewport = {
   themeColor: [
