@@ -2,7 +2,7 @@ import type { Heartbeat } from '@/types/monitor';
 import { clsx } from 'clsx';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { CustomTooltip } from '../ui/CustomTooltip';
 import { calculatePingStats, getStatusColor } from '../utils/charts';
 import { COLOR_SYSTEM } from '../utils/colors';
@@ -12,9 +12,9 @@ interface StatusBlockIndicatorProps {
   heartbeats: Heartbeat[];
   className?: string;
   isHome?: boolean;
+  showHeader?: boolean;
 }
 
-const VIEW_PREFERENCE_KEY = 'view-preference';
 const BLOCK_BASE_CLASS =
   'flex-1 h-full cursor-pointer transition-all hover:opacity-80 dark:hover:opacity-90 min-w-[4px]';
 
@@ -22,18 +22,8 @@ export function StatusBlockIndicator({
   heartbeats,
   className,
   isHome = true,
+  showHeader = true,
 }: StatusBlockIndicatorProps) {
-  const [isGlobalLiteView, setIsGlobalLiteView] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedPreference = localStorage.getItem(VIEW_PREFERENCE_KEY);
-      if (savedPreference === 'lite') {
-        setIsGlobalLiteView(true);
-      }
-    }
-  }, []);
-
   const t = useTranslations();
   // 获取最近的 50 个心跳数据点
   const recentHeartbeats = useMemo(() => heartbeats.slice(-50), [heartbeats]);
@@ -74,14 +64,14 @@ export function StatusBlockIndicator({
     <div className={clsx('relative mt-4 flex flex-col gap-1 min-w-0', className)}>
       {/* 图例和延迟统计 */}
       <div className="absolute -top-5 flex w-full items-center justify-between">
-        {!isGlobalLiteView && <PingStats heartbeats={recentHeartbeats} isHome={isHome} />}
+        {showHeader && <PingStats heartbeats={recentHeartbeats} isHome={isHome} />}
         <div
           className={clsx(
             'flex items-center gap-2 text-xs text-foreground/80 dark:text-foreground/60',
             isHome && 'ml-auto'
           )}
         >
-          {!isGlobalLiteView &&
+          {showHeader &&
             Object.entries(COLOR_SYSTEM)
               .filter(([_, value]) => value.showInLegend)
               .map(([key, value]) => (

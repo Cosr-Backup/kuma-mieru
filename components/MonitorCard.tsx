@@ -151,7 +151,7 @@ export function MonitorCard({
           </div>
         </CardHeader>
         <CardBody className="grid grid-rows-[auto_auto_1fr] gap-4">
-          <StatusBlockIndicator heartbeats={heartbeats} isHome={isHome} />
+          <StatusBlockIndicator heartbeats={heartbeats} isHome={isHome} showHeader={true} />
 
           <Divider />
 
