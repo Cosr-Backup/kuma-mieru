@@ -16,7 +16,7 @@ interface StatusBlockIndicatorProps {
 }
 
 const BLOCK_BASE_CLASS =
-  'flex-1 h-full cursor-pointer transition-all hover:opacity-80 dark:hover:opacity-90 min-w-[4px]';
+  'flex-1 h-full cursor-pointer transition-all hover:opacity-80 dark:hover:opacity-90 min-w-[2px]';
 
 export function StatusBlockIndicator({
   heartbeats,
@@ -25,16 +25,21 @@ export function StatusBlockIndicator({
   showHeader = true,
 }: StatusBlockIndicatorProps) {
   const t = useTranslations();
-  // 获取最近的 50 个心跳数据点
+  const targetVisibleBars = heartbeats.length >= 100 ? 100 : 50;
+
+  // 统计维度保持在最近 50 个点，避免旧数据抬高平均值
   const recentHeartbeats = useMemo(() => heartbeats.slice(-50), [heartbeats]);
+
+  // 条形图在首页采用更紧凑的最近窗口，详情页展示完整 100 点
+  const visibleHeartbeats = useMemo(() => heartbeats.slice(-targetVisibleBars), [heartbeats, targetVisibleBars]);
 
   // 计算延迟动态分布
   const pingStats = useMemo(() => calculatePingStats(recentHeartbeats), [recentHeartbeats]);
 
   const heartbeatBlocks = useMemo(() => {
-    if (heartbeats.length === 0) return [];
+    if (visibleHeartbeats.length === 0) return [];
 
-    return heartbeats.map(hb => {
+    return visibleHeartbeats.map(hb => {
       const colorInfo = getStatusColor(hb, pingStats);
       const tooltipContent = (
         <div key={hb.time} className="flex w-full items-center gap-x-2">
@@ -58,7 +63,7 @@ export function StatusBlockIndicator({
         tooltipContent,
       };
     });
-  }, [heartbeats, pingStats, t]);
+  }, [visibleHeartbeats, pingStats, t]);
 
   return (
     <div className={clsx('relative mt-4 flex flex-col gap-1 min-w-0', className)}>
@@ -84,7 +89,7 @@ export function StatusBlockIndicator({
       </div>
 
       {/* 状态块 */}
-      <div className="flex gap-0.5 mt-2 h-3 w-[98%] justify-end items-center mx-auto rounded-sm overflow-hidden">
+      <div className="flex gap-px md:gap-0.5 mt-2 h-3 w-[98%] justify-end items-center mx-auto rounded-sm overflow-hidden">
         {heartbeatBlocks.map(({ key, tooltipContent, blockClassName }) => (
           <CustomTooltip key={key} content={tooltipContent}>
             <div className={blockClassName} />

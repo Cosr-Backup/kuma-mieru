@@ -66,6 +66,7 @@ export function MonitorCard({
 
   const { statusVisual, StatusIcon } = getMonitorCardStatusMeta(heartbeats);
   const uptimeData = getUptimeRingData(uptime24h, statusVisual.ringFill);
+  const defaultChartRange = heartbeats.length >= 100 ? '100-points' : '50-points';
 
   const handleClick = () => {
     if (isHome) {
@@ -162,6 +163,7 @@ export function MonitorCard({
                 height={120}
                 color={statusVisual.chartColor}
                 showGrid
+                defaultRange={defaultChartRange}
               />
             )}{' '}
             {isSafari && (

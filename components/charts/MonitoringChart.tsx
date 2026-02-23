@@ -21,9 +21,13 @@ interface MonitoringChartProps {
   height?: number;
   showGrid?: boolean;
   color?: 'success' | 'warning' | 'danger' | 'primary' | 'default';
+  defaultRange?: '100-points' | '50-points' | '25-points' | '10-points';
 }
 
+type RangeKey = NonNullable<MonitoringChartProps['defaultRange']>;
+
 const countRanges = [
+  { key: '100-points', count: 100 },
   { key: '50-points', count: 50 },
   { key: '25-points', count: 25 },
   { key: '10-points', count: 10 },
@@ -123,11 +127,30 @@ export function MonitoringChart({
   height = 200,
   showGrid = false,
   color = 'default',
+  defaultRange = '50-points',
 }: MonitoringChartProps) {
   const t = useTranslations();
-  const [selectedRange, setSelectedRange] = useState('50-points');
+  const [selectedRange, setSelectedRange] = useState<RangeKey>(defaultRange);
   const [chartReady, setChartReady] = useState(false);
   const chartContainerRef = useRef<HTMLDivElement>(null);
+
+  const availableRanges = useMemo(
+    () => countRanges.filter(range => range.key !== '100-points' || heartbeats.length >= 100),
+    [heartbeats.length]
+  );
+
+  useEffect(() => {
+    const nextRange = availableRanges.some(range => range.key === defaultRange)
+      ? defaultRange
+      : '50-points';
+    setSelectedRange(nextRange);
+  }, [availableRanges, defaultRange]);
+
+  useEffect(() => {
+    if (!availableRanges.some(range => range.key === selectedRange)) {
+      setSelectedRange('50-points');
+    }
+  }, [availableRanges, selectedRange]);
 
   useEffect(() => {
     let mounted = true;
@@ -151,7 +174,7 @@ export function MonitoringChart({
   const filteredData = useMemo(() => {
     if (!heartbeats || !Array.isArray(heartbeats)) return [];
 
-    const count = countRanges.find(r => r.key === selectedRange)?.count || 100;
+    const count = availableRanges.find(r => r.key === selectedRange)?.count || 50;
 
     return heartbeats
       .slice(-count)
@@ -162,19 +185,19 @@ export function MonitoringChart({
         status: hb.status,
         color: getLatencyColor(hb.ping || 0),
       }));
-  }, [heartbeats, selectedRange]);
+  }, [availableRanges, heartbeats, selectedRange]);
 
   const pings = filteredData.map(d => d.ping).filter(p => p > 0 && !Number.isNaN(p));
   const minPing = pings.length > 0 ? Math.max(0, Math.min(...pings) - 10) : 0;
   const maxPing = pings.length > 0 ? Math.max(...pings) + 10 : 100;
 
   const handleRangeChange = useCallback((key: ReactKey) => {
-    setSelectedRange(key as string);
+    setSelectedRange(key as RangeKey);
   }, []);
 
   if (!filteredData.length) {
     return (
-      <div className="w-full h-[200px] flex items-center justify-center text-default-500">
+      <div className="w-full h-50 flex items-center justify-center text-default-500">
         {t('noData')}
       </div>
     );
@@ -191,7 +214,7 @@ export function MonitoringChart({
           onSelectionChange={handleRangeChange}
           className="font-light text-sm"
         >
-          {countRanges.map(range => (
+          {availableRanges.map(range => (
             <Tab key={range.key} title={t('node.count', { count: range.count })} />
           ))}
         </Tabs>
