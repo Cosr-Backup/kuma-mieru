@@ -31,7 +31,10 @@ export function StatusBlockIndicator({
   const recentHeartbeats = useMemo(() => heartbeats.slice(-50), [heartbeats]);
 
   // 条形图在首页采用更紧凑的最近窗口，详情页展示完整 100 点
-  const visibleHeartbeats = useMemo(() => heartbeats.slice(-targetVisibleBars), [heartbeats, targetVisibleBars]);
+  const visibleHeartbeats = useMemo(
+    () => heartbeats.slice(-targetVisibleBars),
+    [heartbeats, targetVisibleBars]
+  );
 
   // 计算延迟动态分布
   const pingStats = useMemo(() => calculatePingStats(recentHeartbeats), [recentHeartbeats]);
