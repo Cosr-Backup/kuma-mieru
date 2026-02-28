@@ -30,6 +30,32 @@ const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
   timeout: customFetchOptions.timeout,
 };
 
+function normalizeRequestHeaders(headers?: RequestInit['headers']): Record<string, string> {
+  if (!headers) {
+    return {};
+  }
+
+  if (headers instanceof Headers) {
+    return Object.fromEntries(headers.entries());
+  }
+
+  if (Array.isArray(headers)) {
+    return Object.fromEntries(headers);
+  }
+
+  const normalized: Record<string, string> = {};
+
+  for (const [key, value] of Object.entries(headers)) {
+    if (value === undefined) {
+      continue;
+    }
+
+    normalized[key] = String(value);
+  }
+
+  return normalized;
+}
+
 let hasShownInsecureTlsWarning = false;
 
 function sleep(ms: number): Promise<void> {
@@ -48,9 +74,15 @@ async function makeRequest(
     ...fetchOptions
   } = options;
 
+  const mergedHeaders = {
+    ...normalizeRequestHeaders(customFetchOptions.headers),
+    ...normalizeRequestHeaders(fetchOptions.headers),
+  };
+
   const mergedOptions = {
     ...customFetchOptions,
     ...fetchOptions,
+    headers: mergedHeaders,
   };
 
   const parsedUrl = new URL(url);
