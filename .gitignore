@@ -55,3 +55,7 @@ dist/
 !CODE_OF_CONDUCT.md
 !CONTRIBUTING.md
 !README*
+
+.agents/
+.claude/
+*-lock.json
