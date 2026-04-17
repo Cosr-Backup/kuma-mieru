@@ -3,6 +3,7 @@
 import { usePageConfig } from '@/components/context/PageConfigContext';
 import type { GlobalConfig } from '@/types/config';
 import type { MonitorResponse, MonitoringData } from '@/types/monitor';
+import type { PageTabMeta, PageTabsStatusMatrix } from '@/types/page';
 import useSWR, { mutate } from 'swr';
 import type { SWRConfiguration } from 'swr';
 
@@ -10,6 +11,16 @@ interface ApiEnvelope {
   success?: boolean;
   status?: 'ok' | 'partial' | 'all_failed' | 'partial_failed';
   error?: string;
+}
+
+export interface ConfigResponse extends GlobalConfig {
+  pageTabs?: PageTabMeta[];
+  matrixStatus?: PageTabsStatusMatrix['status'];
+  success?: boolean;
+  status?: ApiEnvelope['status'];
+  failureType?: PageTabMeta['failureType'];
+  error?: string;
+  timestamp?: number;
 }
 
 /**
@@ -149,7 +160,7 @@ export function useConfig(config?: SWRConfiguration) {
     error,
     isLoading,
     mutate: revalidate,
-  } = useSWR<GlobalConfig>(SWR_KEYS.CONFIG(pageId), fetcher, {
+  } = useSWR<ConfigResponse>(SWR_KEYS.CONFIG(pageId), fetcher, {
     ...DEFAULT_SWR_CONFIG,
     revalidateIfStale: false, // 除非明确要求，否则不重新验证陈旧数据
     ...config,
@@ -177,7 +188,7 @@ export function useMaintenanceData(config?: SWRConfiguration) {
     error,
     isLoading,
     mutate: revalidate,
-  } = useSWR<GlobalConfig>(SWR_KEYS.CONFIG(pageId), fetcher, {
+  } = useSWR<ConfigResponse>(SWR_KEYS.CONFIG(pageId), fetcher, {
     ...DEFAULT_SWR_CONFIG,
     refreshInterval: 60000, // 每60秒刷新一次
     ...config,
