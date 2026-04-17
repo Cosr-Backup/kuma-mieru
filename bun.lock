@@ -72,7 +72,6 @@
     },
   },
   "trustedDependencies": [
-    "esbuild",
     "@heroui/shared-utils",
     "sharp",
     "workerd",

@@ -94,7 +94,6 @@
   },
   "trustedDependencies": [
     "@heroui/shared-utils",
-    "esbuild",
     "sharp",
     "workerd"
   ]
