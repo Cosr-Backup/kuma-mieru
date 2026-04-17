@@ -9,12 +9,12 @@ export const siteMetaSchema = z.object({
 
 export const generatedPageConfigSchema = z.object({
   id: z.string(),
-  baseUrl: z.string().url(),
+  baseUrl: z.url(),
   siteMeta: siteMetaSchema,
 });
 
 export const generatedConfigSchema = z.object({
-  baseUrl: z.string().url(),
+  baseUrl: z.url(),
   pageId: z.string(),
   pageIds: z.array(z.string()).min(1),
   pages: z.array(generatedPageConfigSchema).min(1),

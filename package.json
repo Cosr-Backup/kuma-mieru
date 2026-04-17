@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@expressive-code/plugin-shiki": "^0.41.7",
-    "@heroui/react": "^3.0.2",
+    "@heroui/react": "^2.8.10",
     "@heroui/theme": "^2.4.26",
     "@mdx-js/mdx": "^3.1.1",
     "@mdx-js/react": "^3.1.1",
@@ -71,7 +71,7 @@
     "tm-themes": "^1.12.2",
     "unified": "^11.0.5",
     "usehooks-ts": "^3.1.1",
-    "zod": "^3.25.76"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "16.2.4",
@@ -94,7 +94,6 @@
   },
   "trustedDependencies": [
     "@heroui/shared-utils",
-    "esbuild",
     "sharp",
     "workerd"
   ]

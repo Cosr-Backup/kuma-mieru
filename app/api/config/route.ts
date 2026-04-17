@@ -33,6 +33,7 @@ export async function GET(request: Request) {
       },
       success: result.success,
       status: result.status,
+      pageTabs: tabsResult.tabs,
       matrixStatus: tabsResult.matrix.status,
       failureType: result.failureType,
       error: result.error,

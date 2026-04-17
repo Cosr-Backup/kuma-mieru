@@ -29,8 +29,8 @@ interface EnhancedMonitorGroup extends MonitorGroup {
 }
 
 export function StatusPage() {
-  const { config: globalConfig, isLoading: isLoadingConfig } = useConfig();
-  const { maintenanceList, isLoading: isLoadingMaintenance } = useMaintenanceData();
+  const { config: globalConfig } = useConfig();
+  const { maintenanceList } = useMaintenanceData();
   const { monitorGroups, monitoringData, isLoading: isLoadingMonitors } = useMonitorData();
   const { searchTerm, isFiltering, clearSearch, filterStatus, searchInGroup } = useNodeSearch();
   const currentPageConfig = usePageConfig();
@@ -54,7 +54,7 @@ export function StatusPage() {
     }
   }, [isGlobalLiteView]);
 
-  const isLoading = isLoadingMonitors || isLoadingConfig || isLoadingMaintenance;
+  const isLoading = isLoadingMonitors;
 
   const activeMaintenances = maintenanceList.filter(
     m => m.active && (m.status === 'under-maintenance' || m.status === 'scheduled')

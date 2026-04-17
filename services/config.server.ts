@@ -251,8 +251,9 @@ export const getGlobalConfigResult = cache(async (pageId?: string): Promise<Glob
           ? 'light'
           : 'system';
 
-    const maintenanceData = await getMaintenanceData(config.pageId);
-    const maintenanceList = maintenanceData.maintenanceList || [];
+    const maintenanceList = Array.isArray(preloadData.maintenanceList)
+      ? processMaintenanceData(preloadData.maintenanceList)
+      : [];
 
     const result: GlobalConfig = {
       config: {

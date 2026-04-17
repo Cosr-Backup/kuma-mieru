@@ -3,6 +3,8 @@
 import { usePageConfig } from '@/components/context/PageConfigContext';
 import type { GlobalConfig } from '@/types/config';
 import type { MonitorResponse, MonitoringData } from '@/types/monitor';
+import type { PageTabMeta, PageTabsStatusMatrix } from '@/types/page';
+import { useCallback, useEffect, useRef } from 'react';
 import useSWR, { mutate } from 'swr';
 import type { SWRConfiguration } from 'swr';
 
@@ -10,6 +12,16 @@ interface ApiEnvelope {
   success?: boolean;
   status?: 'ok' | 'partial' | 'all_failed' | 'partial_failed';
   error?: string;
+}
+
+export interface ConfigResponse extends GlobalConfig {
+  pageTabs?: PageTabMeta[];
+  matrixStatus?: PageTabsStatusMatrix['status'];
+  success?: boolean;
+  status?: ApiEnvelope['status'];
+  failureType?: PageTabMeta['failureType'];
+  error?: string;
+  timestamp?: number;
 }
 
 /**
@@ -62,6 +74,92 @@ const DEFAULT_SWR_CONFIG: SWRConfiguration = {
   errorRetryInterval: 1000,
   loadingTimeout: 5000, // 增加加载超时
 };
+
+interface PrefetchOptions {
+  ttlMs?: number;
+  force?: boolean;
+}
+
+interface IntentPrefetchOptions extends PrefetchOptions {
+  delayMs?: number;
+  disabled?: boolean;
+}
+
+const DEFAULT_PREFETCH_TTL_MS = 30_000;
+const DEFAULT_PREFETCH_DELAY_MS = 120;
+const MAX_CONCURRENT_PREFETCHES = 1;
+
+let activePrefetches = 0;
+const prefetchedAt = new Map<string, number>();
+const inFlightPrefetchKeys = new Set<string>();
+
+export async function prefetchSWRKey<T>(key: string, options: PrefetchOptions = {}) {
+  const ttlMs = options.ttlMs ?? DEFAULT_PREFETCH_TTL_MS;
+  const now = Date.now();
+  const lastPrefetchedAt = prefetchedAt.get(key);
+
+  if (!options.force && lastPrefetchedAt && now - lastPrefetchedAt < ttlMs) {
+    return false;
+  }
+
+  if (inFlightPrefetchKeys.has(key) || activePrefetches >= MAX_CONCURRENT_PREFETCHES) {
+    return false;
+  }
+
+  activePrefetches += 1;
+  prefetchedAt.set(key, now);
+  inFlightPrefetchKeys.add(key);
+
+  try {
+    await mutate(key, fetcher<T>(key), {
+      populateCache: true,
+      revalidate: false,
+    });
+
+    return true;
+  } catch {
+    return false;
+  } finally {
+    activePrefetches -= 1;
+    inFlightPrefetchKeys.delete(key);
+  }
+}
+
+export function useIntentPrefetch(key: string, options: IntentPrefetchOptions = {}) {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const delayMs = options.delayMs ?? DEFAULT_PREFETCH_DELAY_MS;
+  const disabled = options.disabled ?? false;
+  const force = options.force ?? false;
+  const ttlMs = options.ttlMs;
+
+  const cancelPrefetch = useCallback(() => {
+    if (!timerRef.current) {
+      return;
+    }
+
+    clearTimeout(timerRef.current);
+    timerRef.current = null;
+  }, []);
+
+  const schedulePrefetch = useCallback(() => {
+    if (disabled) {
+      return;
+    }
+
+    cancelPrefetch();
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      void prefetchSWRKey(key, { force, ttlMs });
+    }, delayMs);
+  }, [cancelPrefetch, delayMs, disabled, force, key, ttlMs]);
+
+  useEffect(() => cancelPrefetch, [cancelPrefetch]);
+
+  return {
+    schedulePrefetch,
+    cancelPrefetch,
+  };
+}
 
 /**
  * 获取监控数据的 hook
@@ -149,7 +247,7 @@ export function useConfig(config?: SWRConfiguration) {
     error,
     isLoading,
     mutate: revalidate,
-  } = useSWR<GlobalConfig>(SWR_KEYS.CONFIG(pageId), fetcher, {
+  } = useSWR<ConfigResponse>(SWR_KEYS.CONFIG(pageId), fetcher, {
     ...DEFAULT_SWR_CONFIG,
     revalidateIfStale: false, // 除非明确要求，否则不重新验证陈旧数据
     ...config,
@@ -177,7 +275,7 @@ export function useMaintenanceData(config?: SWRConfiguration) {
     error,
     isLoading,
     mutate: revalidate,
-  } = useSWR<GlobalConfig>(SWR_KEYS.CONFIG(pageId), fetcher, {
+  } = useSWR<ConfigResponse>(SWR_KEYS.CONFIG(pageId), fetcher, {
     ...DEFAULT_SWR_CONFIG,
     refreshInterval: 60000, // 每60秒刷新一次
     ...config,
