@@ -22,3 +22,13 @@
 .fade-in-soft {
   animation: fade-in-soft 0.22s ease-out both;
 }
+
+/* Tab scroll list: hide scrollbar while keeping scroll behaviour */
+.tab-scroll-list {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 11 */
+}
+
+.tab-scroll-list::-webkit-scrollbar {
+  display: none; /* Chrome / Safari / Edge */
+}

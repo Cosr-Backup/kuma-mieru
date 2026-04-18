@@ -1,7 +1,7 @@
 {
   "name": "kuma-mieru",
   "description": "A 3rd-party Uptime Kuma monitoring dashboard built on Next.js 16, TypeScript and Recharts.",
-  "version": "1.6.10",
+  "version": "1.7.0",
   "author": "Alice39s",
   "license": "MPL-2.0",
   "homepage": "https://github.com/Alice39s/kuma-mieru",
@@ -29,11 +29,11 @@
   },
   "dependencies": {
     "@expressive-code/plugin-shiki": "^0.41.7",
-    "@heroui/react": "^2.8.10",
-    "@heroui/theme": "^2.4.26",
+    "@heroui/react": "2.8.9",
+    "@heroui/theme": "2.4.26",
     "@mdx-js/mdx": "^3.1.1",
     "@mdx-js/react": "^3.1.1",
-    "@next/bundle-analyzer": "^16.2.3",
+    "@next/bundle-analyzer": "^16.2.4",
     "@opennextjs/cloudflare": "^1.19.1",
     "@react-aria/ssr": "3.10.0",
     "@react-aria/visually-hidden": "3.9.0",
