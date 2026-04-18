@@ -19,7 +19,7 @@ import { filterMonitorByStatus } from '@/utils/monitorFilters';
 import { Button, Tooltip } from '@heroui/react';
 import { LayoutGrid, LayoutList } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 
 const GLOBAL_VIEW_PREFERENCE_KEY = 'view-preference';
 
@@ -36,6 +36,7 @@ export function StatusPage() {
   const currentPageConfig = usePageConfig();
 
   const [isGlobalLiteView, setIsGlobalLiteView] = useState(false);
+  const [, startTransition] = useTransition();
 
   const viewT = useTranslations('view');
 
@@ -65,7 +66,9 @@ export function StatusPage() {
   };
 
   const toggleGlobalView = () => {
-    setIsGlobalLiteView(prev => !prev);
+    startTransition(() => {
+      setIsGlobalLiteView(prev => !prev);
+    });
   };
 
   const filteredMonitorGroups = useMemo(() => {
