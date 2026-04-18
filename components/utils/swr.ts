@@ -87,7 +87,7 @@ interface IntentPrefetchOptions extends PrefetchOptions {
 
 const DEFAULT_PREFETCH_TTL_MS = 30_000;
 const DEFAULT_PREFETCH_DELAY_MS = 120;
-const MAX_CONCURRENT_PREFETCHES = 1;
+const MAX_CONCURRENT_PREFETCHES = 2;
 
 let activePrefetches = 0;
 const prefetchedAt = new Map<string, number>();
@@ -125,33 +125,45 @@ export async function prefetchSWRKey<T>(key: string, options: PrefetchOptions = 
   }
 }
 
-export function useIntentPrefetch(key: string, options: IntentPrefetchOptions = {}) {
+export function useIntentPrefetch(
+  keys: string | readonly string[],
+  options: IntentPrefetchOptions = {}
+) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // stable ref for keys — avoids array identity churn in callbacks
+  const keysRef = useRef<readonly string[]>(
+    Array.isArray(keys) ? (keys as readonly string[]) : [keys as string]
+  );
   const delayMs = options.delayMs ?? DEFAULT_PREFETCH_DELAY_MS;
   const disabled = options.disabled ?? false;
   const force = options.force ?? false;
   const ttlMs = options.ttlMs;
 
-  const cancelPrefetch = useCallback(() => {
-    if (!timerRef.current) {
-      return;
-    }
+  // keep keys ref in sync without adding array to callback deps
+  const keysSignature = Array.isArray(keys)
+    ? (keys as readonly string[]).join('\x00')
+    : (keys as string);
+  useEffect(() => {
+    keysRef.current = Array.isArray(keys) ? (keys as readonly string[]) : [keys as string];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keysSignature]);
 
+  const cancelPrefetch = useCallback(() => {
+    if (!timerRef.current) return;
     clearTimeout(timerRef.current);
     timerRef.current = null;
   }, []);
 
   const schedulePrefetch = useCallback(() => {
-    if (disabled) {
-      return;
-    }
-
+    if (disabled) return;
     cancelPrefetch();
     timerRef.current = setTimeout(() => {
       timerRef.current = null;
-      void prefetchSWRKey(key, { force, ttlMs });
+      for (const k of keysRef.current) {
+        void prefetchSWRKey(k, { force, ttlMs });
+      }
     }, delayMs);
-  }, [cancelPrefetch, delayMs, disabled, force, key, ttlMs]);
+  }, [cancelPrefetch, delayMs, disabled, force, ttlMs]);
 
   useEffect(() => cancelPrefetch, [cancelPrefetch]);
 
@@ -177,6 +189,7 @@ export function useMonitorData(config?: SWRConfiguration) {
   } = useSWR<MonitorResponse>(SWR_KEYS.MONITOR(pageId), fetcher, {
     ...DEFAULT_SWR_CONFIG,
     refreshInterval: 60000, // 每60秒刷新一次
+    keepPreviousData: true, // 页面切换时保留旧数据，避免闪烁
     ...config,
   });
 
@@ -250,6 +263,7 @@ export function useConfig(config?: SWRConfiguration) {
   } = useSWR<ConfigResponse>(SWR_KEYS.CONFIG(pageId), fetcher, {
     ...DEFAULT_SWR_CONFIG,
     revalidateIfStale: false, // 除非明确要求，否则不重新验证陈旧数据
+    keepPreviousData: true, // 页面切换时保留旧数据，避免闪烁
     ...config,
   });
 

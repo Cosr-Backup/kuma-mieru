@@ -44,8 +44,12 @@ export function AppShell({ children, footerConfig, pageTabs }: AppShellProps) {
       <PageTabs tabs={resolvedPageTabs} />
       {hasPartialFailure ? (
         <div className="container mx-auto max-w-7xl px-6 pt-4">
-          <div className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning-700">
-            Some status pages are unavailable: {failedTabs.map(tab => tab.id).join(', ')}
+          <div className="flex items-center gap-2 rounded-xl border border-warning/30 bg-warning/10 px-4 py-2.5 text-sm text-warning-700 dark:text-warning-400">
+            <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-warning animate-pulse" />
+            <span>
+              Some status pages are unavailable:{' '}
+              <span className="font-medium">{failedTabs.map(tab => tab.id).join(', ')}</span>
+            </span>
           </div>
         </div>
       ) : null}
