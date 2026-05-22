@@ -5,8 +5,13 @@ import { fileURLToPath } from 'node:url';
 import createNextIntlPlugin from 'next-intl/plugin';
 import bundleAnalyzer from '@next/bundle-analyzer';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+let __dirname;
+try {
+  const __filename = fileURLToPath(import.meta.url);
+  __dirname = dirname(__filename);
+} catch {
+  __dirname = process.cwd();
+}
 
 const defaultProtocols = ['https', 'http'];
 
@@ -78,6 +83,7 @@ const baseConfig = {
     localPatterns: [
       {
         pathname: '/api/icon',
+        search: '',
       },
     ],
     formats: ['image/avif', 'image/webp'],
@@ -118,7 +124,7 @@ const baseConfig = {
 
 const productionConfig = {
   ...baseConfig,
-  output: 'standalone',
+  output: process.env.VERCEL ? undefined : 'standalone',
 
   experimental: {
     optimizePackageImports: ['lucide-react', '@heroui/react'],
