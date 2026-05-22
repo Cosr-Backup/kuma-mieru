@@ -10,13 +10,30 @@ updates:
       day: 'thursday'
       time: '00:00'
       timezone: 'Etc/UTC'
+    # 新包冷静期：按周批量合并，确保新发布至少经过一次检查周期（约 3~7 天）
+    # 才进入更新 PR，避免追新导致的不稳定版本
+    groups:
+      all-dependencies:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
+      major-updates:
+        patterns:
+          - '*'
+        update-types:
+          - 'major'
     commit-message:
       prefix: 'chore(deps)'
     labels:
       - 'dependencies'
       - 'deps-bun'
       - 'automerge'
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
+    # 安全漏洞 PR 不受 group 限制，会单独立即创建
+    # 非安全更新统一走 weekly batch，降低追新风险
+
   - package-ecosystem: 'docker'
     directory: '/'
     schedule:
@@ -24,10 +41,14 @@ updates:
       day: 'thursday'
       time: '00:00'
       timezone: 'Etc/UTC'
+    groups:
+      docker-images:
+        patterns:
+          - '*'
     commit-message:
       prefix: 'chore(deps)'
     labels:
       - 'dependencies'
       - 'deps-docker'
       - 'automerge'
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
