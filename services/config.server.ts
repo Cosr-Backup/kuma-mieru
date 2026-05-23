@@ -255,19 +255,34 @@ export const getGlobalConfigResult = cache(async (pageId?: string): Promise<Glob
       ? processMaintenanceData(preloadData.maintenanceList)
       : [];
 
+    const rawIncidents = Array.isArray(preloadData.incidents)
+      ? preloadData.incidents
+      : preloadData.incident
+        ? [preloadData.incident]
+        : [];
+
+    // `active` is omitted by legacy Kuma (single-incident shape) — treat missing as active
+    // so back-compat consumers keep seeing the incident. Newer Kuma sends an explicit boolean.
+    // `createdDate` is required: without it the UI would render the Unix epoch (1970) rather
+    // than a meaningful timestamp, so drop malformed entries at the boundary.
+    const incidents = rawIncidents
+      .filter(incident => incident && incident.active !== false && incident.createdDate)
+      .map(incident => ({
+        ...incident,
+        pin: Boolean(incident.pin),
+        createdDate: ensureUTCTimezone(incident.createdDate),
+        lastUpdatedDate: incident.lastUpdatedDate
+          ? ensureUTCTimezone(incident.lastUpdatedDate)
+          : null,
+      }));
+
     const result: GlobalConfig = {
       config: {
         ...preloadData.config,
         icon: buildIconProxyUrl(config.pageId),
         theme,
       },
-      incident: preloadData.incident
-        ? {
-            ...preloadData.incident,
-            createdDate: ensureUTCTimezone(preloadData.incident.createdDate),
-            lastUpdatedDate: ensureUTCTimezone(preloadData.incident.lastUpdatedDate),
-          }
-        : undefined,
+      incidents: incidents.length > 0 ? incidents : undefined,
       maintenanceList,
     };
 
