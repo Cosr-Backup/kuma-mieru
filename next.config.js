@@ -83,7 +83,6 @@ const baseConfig = {
     localPatterns: [
       {
         pathname: '/api/icon',
-        search: '',
       },
     ],
     formats: ['image/avif', 'image/webp'],

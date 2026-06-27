@@ -1,12 +1,14 @@
 'use client';
 import { parseErrorDetails } from '@/app/lib/error-details';
 import { Footer } from '@/components/Footer';
+import { I18NSwitch } from '@/components/basic/i18n-switch';
+import { ErrorStackTrace } from '@/components/error/ErrorStackTrace';
 import { Button, Card, CardBody, CardFooter, CardHeader, Divider } from '@heroui/react';
-import { AlertTriangle, Check, Copy, Home, RotateCw, Server } from 'lucide-react';
+import { AlertTriangle, Home, RotateCw, Server } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useEffect, useMemo, useTransition } from 'react';
 
 interface ErrorPageProps {
   error: Error & { digest?: string };
@@ -17,7 +19,6 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
   const t = useTranslations('errorPage');
   const router = useRouter();
   const [isRetrying, startRetryTransition] = useTransition();
-  const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
     console.error('[ErrorBoundary]', error, error?.digest ? `(digest: ${error.digest})` : '');
@@ -47,30 +48,30 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
   };
 
   const stack = error?.stack;
-
-  const handleCopyError = () => {
-    const errorText = `Title: ${resolvedTitle}\nDiagnostics: ${parsed.diagnostics}\nStatus: ${resolvedHttpStatus}\n\nStack:\n${stack || 'N/A'}`;
-    navigator.clipboard.writeText(errorText).then(() => {
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    });
-  };
+  const errorText = useMemo(
+    () =>
+      `Title: ${resolvedTitle}\nDiagnostics: ${parsed.diagnostics}\nStatus: ${resolvedHttpStatus}\n\nStack:\n${stack || 'N/A'}`,
+    [resolvedTitle, parsed.diagnostics, resolvedHttpStatus, stack]
+  );
 
   return (
     <div className="relative flex min-h-screen flex-col">
       <main
         role="alert"
-        className="container mx-auto flex max-w-lg grow items-center justify-center px-4 py-12 sm:px-6 sm:py-16"
+        className="container mx-auto flex max-w-2xl grow items-center justify-center px-4 py-12 sm:px-6 sm:py-16"
       >
         <Card className="w-full border-danger/20 bg-danger/15 shadow-medium">
-          <CardHeader className="flex gap-3 px-6 pb-0 pt-6">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-danger/10 text-danger">
-              <AlertTriangle size={24} aria-hidden="true" />
+          <CardHeader className="flex items-start justify-between gap-3 px-6 pb-0 pt-6">
+            <div className="flex gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-danger/10 text-danger">
+                <AlertTriangle size={24} aria-hidden="true" />
+              </div>
+              <div className="flex min-w-0 flex-col">
+                <h1 className="text-xl font-bold text-danger">{resolvedTitle}</h1>
+                <p className="text-small text-default-500">{t('diagnostics')}</p>
+              </div>
             </div>
-            <div className="flex min-w-0 flex-col">
-              <h1 className="text-xl font-bold text-danger">{resolvedTitle}</h1>
-              <p className="text-small text-default-500">{t('diagnostics')}</p>
-            </div>
+            <I18NSwitch />
           </CardHeader>
 
           <CardBody className="px-6 py-4">
@@ -92,29 +93,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
               </div>
             </div>
 
-            {stack ? (
-              <div className="group relative mt-4">
-                <div className="absolute right-2 top-2 z-10 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100">
-                  <Button
-                    isIconOnly
-                    size="sm"
-                    variant="flat"
-                    color={isCopied ? 'success' : 'default'}
-                    className="bg-background/60 shadow-sm backdrop-blur-md hover:bg-background/80"
-                    onPress={handleCopyError}
-                    aria-label="Copy error details"
-                  >
-                    {isCopied ? <Check size={14} /> : <Copy size={14} />}
-                  </Button>
-                </div>
-
-                <div className="max-h-64 w-full overflow-auto rounded-lg border border-danger/10 bg-danger/5 p-4">
-                  <pre className="whitespace-pre-wrap break-all font-mono text-xs text-default-700">
-                    {stack}
-                  </pre>
-                </div>
-              </div>
-            ) : null}
+            {stack ? <ErrorStackTrace stack={stack} errorText={errorText} /> : null}
           </CardBody>
 
           <Divider className="my-1 bg-danger/15" />
