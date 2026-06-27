@@ -6,7 +6,7 @@
 export function formatLatency(ms: number): string {
   if (!ms && ms !== 0) return '-';
 
-  if (ms < 200) {
+  if (ms < 1000) {
     return `${ms.toFixed(0)} ms`;
   }
 
@@ -25,7 +25,7 @@ export function formatLatency(ms: number): string {
  * @returns formatted string with unit, more compact than formatLatency
  */
 export function formatLatencyForAxis(ms: number): string {
-  if (ms <= 200) {
+  if (ms < 1000) {
     return `${ms} ms`;
   }
 
