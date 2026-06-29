@@ -21,10 +21,9 @@ test('prefetchSWRKey skips repeated requests within the ttl window', async () =>
   expect(calls).toBe(1);
 });
 
-test('prefetchSWRKey limits speculative requests to one in flight request', async () => {
+test('prefetchSWRKey skips duplicate in-flight requests', async () => {
   let releaseFetch;
-  const firstKey = `/api/prefetch-slow-${crypto.randomUUID()}`;
-  const secondKey = `/api/prefetch-skip-${crypto.randomUUID()}`;
+  const key = `/api/prefetch-slow-${crypto.randomUUID()}`;
 
   globalThis.fetch = async () => {
     await new Promise(resolve => {
@@ -34,9 +33,9 @@ test('prefetchSWRKey limits speculative requests to one in flight request', asyn
     return Response.json({ success: true });
   };
 
-  const firstPrefetch = prefetchSWRKey(firstKey, { ttlMs: 30_000 });
+  const firstPrefetch = prefetchSWRKey(key, { ttlMs: 30_000 });
 
-  await expect(prefetchSWRKey(secondKey, { ttlMs: 30_000 })).resolves.toBe(false);
+  await expect(prefetchSWRKey(key, { ttlMs: 30_000 })).resolves.toBe(false);
 
   releaseFetch?.();
   await expect(firstPrefetch).resolves.toBe(true);
